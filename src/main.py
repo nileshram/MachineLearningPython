@@ -164,9 +164,15 @@ class SupportVectorMachine(SupervisedLearning):
         data.model["svm_return"] = data.model.log_return * data.model.svm_pred
         
         print(data.model.head())
-        plt.plot(data.model.Date, data.model.log_return.cumsum().apply(np.exp))
-        plt.plot(data.model.Date, data.model.logistic_return.cumsum().apply(np.exp))
-        plt.plot(data.model.Date, data.model.svm_return.cumsum().apply(np.exp))
+        ax1 = plt.gca()
+        ax1.plot(data.model.Date, data.model.log_return.cumsum().apply(np.exp))
+        ax1.plot(data.model.Date, data.model.logistic_return.cumsum().apply(np.exp))
+        ax1.plot(data.model.Date, data.model.svm_return.cumsum().apply(np.exp))
+        
+        
+        plt.minorticks_on()
+        ax1.set_facecolor(color='whitesmoke')
+        plt.grid(b=True, which='minor', color='#999999', linestyle='-', alpha=0.2)
         plt.legend()
         plt.show()
         
