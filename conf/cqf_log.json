@@ -1,0 +1,30 @@
+{
+	"log": {
+		"version": 1,
+		"disable_existing_loggers": true,
+		"formatters": {
+			"cqf_formatter": {
+				"format": "%(asctime)s - %(levelname)s : %(message)s",
+				"datefmt": "%Y%m%d %H:%M:%S"
+			}
+		},
+		"handlers": {
+			"consolehandler": {
+				"class": "logging.StreamHandler",
+				"level": "DEBUG",
+				"formatter": "cqf_formatter",
+				"stream": "ext://sys.stdout"
+			}
+		},
+		"loggers": {
+			"cqf_logger": {
+				"level": "DEBUG",
+				"handlers": [
+					"consolehandler"
+				],
+				"qualname": "CQF",
+				"propagate": "no"
+			}
+		}
+	}
+}
