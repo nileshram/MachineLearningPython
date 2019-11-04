@@ -6,7 +6,8 @@ Author : Nilesh Ramnarain
 """
 from builtins import staticmethod
 from abc import abstractmethod, ABCMeta
-from sklearn import linear_model, svm
+from sklearn import linear_model, svm, model_selection
+from sklearn.metrics import confusion_matrix
 import statsmodels.api as sm
 import matplotlib.pyplot as plt
 import numpy as np
@@ -134,8 +135,23 @@ class LogisticalRegression(SupervisedLearning):
         self.fit_model(data.model[lagged_headers], returns_sign)
         self.run_prediction(data.model[lagged_headers])
         data.model["logistic_return"] = data.model.log_return * data.model.log_pred
-
+        print("Logistic Regression data model: {}, with size {}".format(data.model.head(), len(data.model.log_pred)))
+        print("Logistic Regression score: {}".format(self.lm.score(data.model[lagged_headers], returns_sign)))
+        print("Logistic Regression transition probabilities {}".format(self.lm.predict_proba(data.model[lagged_headers])))
         
+        #Test on training set
+        x_train, x_test, y_train, y_test = model_selection.train_test_split(data.model[lagged_headers], data.model.log_pred,
+                                                                            test_size=0.7, shuffle=False)
+        print("Training set of features: {} with size {}".format(x_train, len(x_train)))
+        
+        print("Running second logistic classifier on training set")
+        logit2 = linear_model.LogisticRegression(C = 1e5)
+        logit2.fit(x_train, y_train)
+        y_pred = logit2.predict(x_test)
+        self.c_matrix = confusion_matrix(y_test, y_pred)
+        print(self.c_matrix)
+        
+
     def run_prediction(self, model):
         log.info("Running Logistical Regression Prediction")
         data.model["log_pred"] = self.lm.predict(model)
@@ -162,8 +178,7 @@ class SupportVectorMachine(SupervisedLearning):
         self.fit_model(data.model[lagged_headers], returns_sign)
         self.run_prediction(data.model[lagged_headers])
         data.model["svm_return"] = data.model.log_return * data.model.svm_pred
-        
-        print(data.model.head())
+        print("SVM score: {}".format(self.svm.score(data.model[lagged_headers], returns_sign)))
         
     def run_prediction(self, model):
         log.info("Running SVM Prediction")
@@ -198,6 +213,19 @@ class GraphLib:
         plt.grid(b=True, which='minor', color='#999999', linestyle='-', alpha=0.2)
         plt.legend()
         plt.show()
+    
+    def plot_confusion_matrix(self, matrix, target_names, title):
+        norm_matrix = matrix * 1. / matrix.sum(axis=1)[:, np.newaxis] #standardised confusion matrix
+        plt.imshow(norm_matrix, interpolation='nearest', cmap='bwr')
+        plt.colorbar()
+        ticks = np.arange(len(target_names))
+        plt.xticks(ticks, target_names, rotation=45)
+        plt.yticks(ticks, target_names)
+        plt.xlabel("Predicted")
+        plt.ylabel("Actual")
+        plt.title(title)
+        plt.tight_layout()
+        plt.show()
         
 if __name__ == "__main__":
     ConfigurationFactory._configure_log()
@@ -209,11 +237,13 @@ if __name__ == "__main__":
         logit = LogisticalRegression()
         logit.run_classifier(data)
         
-        svm = SupportVectorMachine()
-        svm.run_classifier(data)
+#         svm = SupportVectorMachine()
+#         svm.run_classifier(data)
         
         g = GraphLib()
-        g.plot_returns(data)
+#         g.plot_returns(data)
+        g.plot_confusion_matrix(logit.c_matrix, ["Positive Returns", "Negative Returns"],
+                                "Confusion Matrix - Logistic Regression")
         
     except Exception as e:
         print(e)
