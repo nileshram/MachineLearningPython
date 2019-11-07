@@ -95,7 +95,7 @@ class DataModel:
 class SupervisedLearning(metaclass=ABCMeta):
     
     def __init__(self):
-        pass
+        self._logger = logging.getLogger("cqf_log")
     
     @abstractmethod
     def _init_classifier(self):
@@ -126,21 +126,25 @@ class LogisticalRegression(SupervisedLearning):
         self.lm.fit(x_param, y_param)
         
     def run_classifier(self, data):
-        log.info("Running Logisitical Regression Classifier")
+        self._logger.info("Running Logisitical Regression Classifier")
         #perform the regression on returns here
         returns_sign = np.sign(data.model.log_return)
         lagged_headers = [header for header in list(data.model) if "lagged" in header]
         #fitting done here
-        log.info("Fitting model against specified parameters")
+        self._logger.info("Fitting model against specified parameters")
         self.fit_model(data.model[lagged_headers], returns_sign)
-        self.run_prediction(data.model[lagged_headers])
+        self.run_prediction(data, lagged_headers)
         data.model["logistic_return"] = abs(data.model.log_return) * data.model.log_pred
 
         print("Logistic Return Prediction Data Summary: {}".format(data.model.log_pred.value_counts()))
         print("Logistic Regression data model: {}, with size {}".format(data.model.head(), len(data.model.log_pred)))
         print("Logistic Regression score: {}".format(self.lm.score(data.model[lagged_headers], returns_sign)))
+
+    def run_prediction(self, data, x_features):
+        self._logger.info("Running Logistical Regression Prediction")
+        data.model["log_pred"] = self.lm.predict(data.model[x_features])
+
 #         print("Logistic Regression transition probabilities {}".format(self.lm.predict_proba(data.model[lagged_headers])))
-        
         #Test on training set
 #         x_train, x_test, y_train, y_test = model_selection.train_test_split(data.model[lagged_headers], data.model.log_pred,
 #                                                                             test_size=0.7, shuffle=False)
@@ -152,11 +156,6 @@ class LogisticalRegression(SupervisedLearning):
 #         y_pred = logit2.predict(x_test)
 #         self.c_matrix = confusion_matrix(y_test, y_pred)
 #         print(self.c_matrix)
-        
-
-    def run_prediction(self, model):
-        log.info("Running Logistical Regression Prediction")
-        data.model["log_pred"] = self.lm.predict(model)
     
 class SupportVectorMachine(SupervisedLearning):
     
@@ -171,20 +170,20 @@ class SupportVectorMachine(SupervisedLearning):
         self.svm.fit(x_param, y_param)
         
     def run_classifier(self, data):
-        log.info("Running SVM Classifier")
+        self._logger.info("Running SVM Classifier")
         #perform the regression on returns here
         returns_sign = np.sign(data.model.log_return)
         lagged_headers = [header for header in list(data.model) if "lagged" in header]
         #fitting done here
-        log.info("Fitting model against specified parameters")
+        self._logger.info("Fitting model against specified parameters")
         self.fit_model(data.model[lagged_headers], returns_sign)
         self.run_prediction(data.model[lagged_headers])
         data.model["svm_return"] = abs(data.model.log_return) * data.model.svm_pred
         print("SVM score: {}".format(self.svm.score(data.model[lagged_headers], returns_sign)))
         
     def run_prediction(self, model):
-        log.info("Running SVM Prediction")
-        data.model["svm_pred"] = self.svm.predict(model)
+        self._logger.info("Running SVM Prediction")
+        model["svm_pred"] = self.svm.predict(model)
     
 class ANN(SupervisedLearning):
     
