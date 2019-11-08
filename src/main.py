@@ -45,6 +45,9 @@ class FeaturesEngineering:
         if period is None:
             period = 1
         df["log_return"] = np.log(df.Settle) - np.log(df.Settle.shift(period))
+        df["log_return_sign"] = np.sign(df["log_return"])
+        #add condition for binary classification if 0% then replace with negative return to adjust for margin
+        df["log_return_sign"].replace(0, -1, inplace=True)
         return df
     
     @staticmethod
@@ -92,7 +95,7 @@ class DataModel:
     def _convert_to_datetime(self):
         self.model.Date = pd.to_datetime(self.model.Date, format='%d/%m/%Y')
     
-class SupervisedLearning(metaclass=ABCMeta):
+class Classification(metaclass=ABCMeta):
     
     def __init__(self):
         self._logger = logging.getLogger("cqf_log")
@@ -113,7 +116,11 @@ class SupervisedLearning(metaclass=ABCMeta):
     def run_prediction(self):
         raise NotImplementedError("Should implement method run_prediction()")
     
-class LogisticalRegression(SupervisedLearning):
+    @abstractmethod
+    def train_test_split(self):
+        raise NotImplementedError("Should implement method train_test_split()")
+    
+class LogisticalRegression(Classification):
     
     def __init__(self):
         super(LogisticalRegression, self).__init__()
@@ -128,7 +135,7 @@ class LogisticalRegression(SupervisedLearning):
     def run_classifier(self, data):
         self._logger.info("Running Logisitical Regression Classifier")
         #perform the regression on returns here
-        returns_sign = np.sign(data.model.log_return)
+        returns_sign = data.model.log_return_sign
         lagged_headers = [header for header in list(data.model) if "lagged" in header]
         #fitting done here
         self._logger.info("Fitting model against specified parameters")
@@ -139,25 +146,37 @@ class LogisticalRegression(SupervisedLearning):
         print("Logistic Return Prediction Data Summary: {}".format(data.model.log_pred.value_counts()))
         print("Logistic Regression data model: {}, with size {}".format(data.model.head(), len(data.model.log_pred)))
         print("Logistic Regression score: {}".format(self.lm.score(data.model[lagged_headers], returns_sign)))
+        
+        self.train_test_split(data=data, features=lagged_headers, size=0.7, test_param=returns_sign)
 
     def run_prediction(self, data, x_features):
         self._logger.info("Running Logistical Regression Prediction")
         data.model["log_pred"] = self.lm.predict(data.model[x_features])
-
-#         print("Logistic Regression transition probabilities {}".format(self.lm.predict_proba(data.model[lagged_headers])))
-        #Test on training set
-#         x_train, x_test, y_train, y_test = model_selection.train_test_split(data.model[lagged_headers], data.model.log_pred,
-#                                                                             test_size=0.7, shuffle=False)
-#         print("Training set of features: {} with size {}".format(x_train, len(x_train)))
-#         
-#         print("Running second logistic classifier on training set")
-#         logit2 = linear_model.LogisticRegression(C = 1e5)
-#         logit2.fit(x_train, y_train)
-#         y_pred = logit2.predict(x_test)
-#         self.c_matrix = confusion_matrix(y_test, y_pred)
-#         print(self.c_matrix)
     
-class SupportVectorMachine(SupervisedLearning):
+    def train_test_split(self, data=None, features=None, size=None, test_param=None):
+        #default split to half the data set
+        if size is None:
+            size = 0.5
+        self.x_train, self.x_test, self.y_train, self.y_test = model_selection.train_test_split(data.model[features], test_param,
+                                                                            test_size=size, shuffle=False)
+         
+        print("Running second logistic classifier on training set")
+        logit2 = linear_model.LogisticRegression(C = 1e5)
+        logit2.fit(self.x_train, self.y_train)
+        y_pred = logit2.predict(self.x_test)
+        print("Confusion matrix as follows:")
+        self.c_matrix = confusion_matrix(self.y_test, y_pred)
+        print(self.c_matrix)
+
+        unique_label = np.unique([self.y_test, y_pred])
+        cmtx = pd.DataFrame(
+            confusion_matrix(self.y_test, y_pred, labels=unique_label), 
+            index=['true:{:}'.format(x) for x in unique_label], 
+            columns=['pred:{:}'.format(x) for x in unique_label]
+        )
+        print(cmtx)
+        
+class SupportVectorMachine(Classification):
     
     def __init__(self):
         super(SupportVectorMachine, self).__init__()
@@ -172,20 +191,45 @@ class SupportVectorMachine(SupervisedLearning):
     def run_classifier(self, data):
         self._logger.info("Running SVM Classifier")
         #perform the regression on returns here
-        returns_sign = np.sign(data.model.log_return)
+        returns_sign = data.model.log_return_sign
         lagged_headers = [header for header in list(data.model) if "lagged" in header]
         #fitting done here
         self._logger.info("Fitting model against specified parameters")
         self.fit_model(data.model[lagged_headers], returns_sign)
-        self.run_prediction(data.model[lagged_headers])
+        self.run_prediction(data, lagged_headers)
         data.model["svm_return"] = abs(data.model.log_return) * data.model.svm_pred
         print("SVM score: {}".format(self.svm.score(data.model[lagged_headers], returns_sign)))
         
-    def run_prediction(self, model):
+        self.train_test_split(data=data, features=lagged_headers, size=0.7, test_param=returns_sign)
+        
+    def run_prediction(self, data, x_features):
         self._logger.info("Running SVM Prediction")
-        model["svm_pred"] = self.svm.predict(model)
+        data.model["svm_pred"] = self.svm.predict(data.model[x_features])
+
+    def train_test_split(self, data=None, features=None, size=None, test_param=None):
+        #default split to half the data set
+        if size is None:
+            size = 0.5
+        self.x_train, self.x_test, self.y_train, self.y_test = model_selection.train_test_split(data.model[features], test_param,
+                                                                            test_size=size, shuffle=False)
+        print("Running second svm classifier on training set")
+        svm2 = svm.SVC(C = 1e5, probability=True)
+        svm2.fit(self.x_train, self.y_train)
+        y_pred = svm2.predict(self.x_test)
+        print("Confusion matrix as follows:")
+        #first arguments to confusion matrix is true values and the second is predicted vals
+        self.c_matrix = confusion_matrix(self.y_test, y_pred)
+        print(self.c_matrix)
+
+        unique_label = np.unique([self.y_test, y_pred])
+        cmtx = pd.DataFrame(
+            confusion_matrix(self.y_test, y_pred, labels=unique_label), 
+            index=['true:{:}'.format(x) for x in unique_label], 
+            columns=['pred:{:}'.format(x) for x in unique_label]
+        )
+        print(cmtx)
     
-class ANN(SupervisedLearning):
+class ANN(Classification):
     
     def __init__(self):
         super(ANN, self).__init__()
@@ -193,6 +237,13 @@ class ANN(SupervisedLearning):
     
     def run_classifier(self):
         pass
+
+    def train_test_split(self, data=None, features=None, size=None, test_param=None):
+        #default split to half the data set
+        if size is None:
+            size = 0.5
+        self.x_train, self.x_test, self.y_train, self.y_test = model_selection.train_test_split(data.model[features], test_param,
+                                                                            test_size=size, shuffle=False)
 
 class GraphLib:
     
@@ -238,14 +289,13 @@ if __name__ == "__main__":
         logit = LogisticalRegression()
         logit.run_classifier(data)
          
-        svm = SupportVectorMachine()
-        svm.run_classifier(data)
+        support_vector_machinem = SupportVectorMachine()
+        support_vector_machinem.run_classifier(data)
          
-        g = GraphLib()
-        g.plot_returns(data)
+#         g = GraphLib()
+#         g.plot_returns(data)
 #         g.plot_confusion_matrix(logit.c_matrix, ["Positive Returns", "Negative Returns"],
 #                                 "Confusion Matrix - Logistic Regression")
-        print("return prediction {}".format(max(data.model.logistic_return)))
          
     except Exception as e:
         print(e)
