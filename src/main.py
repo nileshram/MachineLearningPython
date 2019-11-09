@@ -17,6 +17,8 @@ import json
 
 #import graph library
 from graph.graphlib import GraphLib
+#import datamodel
+from model.datamodel import DataModel
 
 class ConfigurationFactory:
     
@@ -39,67 +41,6 @@ class ConfigurationFactory:
             logging.config.dictConfig(config["log"])
         else:
             logging.basicConfig(level=logging.INFO)
-
-class FeaturesEngineering:
-    
-    @staticmethod
-    def compute_log_return(df, period=None):
-        if period is None:
-            period = 1
-        df["log_return"] = np.log(df.Settle) - np.log(df.Settle.shift(period))
-        df["log_return_sign"] = np.sign(df["log_return"])
-        #add condition for binary classification if 0% then replace with negative return to adjust for margin
-        df["log_return_sign"].replace(0, -1, inplace=True)
-        return df
-    
-    @staticmethod
-    def compute_lagged_returns(df, lag_number):
-        for lag in range(1, lag_number+1):
-            index = "lagged_return_{}".format(lag)
-            df[index] = df.log_return.shift(lag)
-        return df
-    
-    @staticmethod
-    def compute_momentum_indicator(df):
-        pass
-    
-    @staticmethod
-    def compute_ewma(df):
-        pass
-    
-class DataManager:
-    
-    @staticmethod
-    def load_data(path, name):
-        data_filepath = os.path.join(path, name)
-        try:
-            data = pd.read_csv(data_filepath)
-        except Exception as e:
-            log.info("Could not retrieve data object {}".format(e))
-        return data
-    
-class DataModel:
-    
-    def __init__(self, filename=None):
-        if filename is None:
-            self.filename = "dax.csv"
-        else:
-            self.filename = filename
-        self.model = DataManager.load_data("data", self.filename)
-        self._convert_to_datetime()
-        self.compute_model_features()
-        self._clean_datamodel()
-        
-    def _clean_datamodel(self):
-        self.model.dropna(inplace=True)
-        self.model.sort_values(by='Date')
-    
-    def compute_model_features(self):
-        FeaturesEngineering.compute_log_return(self.model)
-        FeaturesEngineering.compute_lagged_returns(self.model, 5)
-        
-    def _convert_to_datetime(self):
-        self.model.Date = pd.to_datetime(self.model.Date, format='%d/%m/%Y')
     
 class Classification(metaclass=ABCMeta):
     
