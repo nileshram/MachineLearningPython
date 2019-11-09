@@ -25,8 +25,10 @@ class FeaturesEngineering:
         return df
     
     @staticmethod
-    def compute_momentum_indicator(df):
-        pass
+    def compute_momentum_indicator(df, period):
+        tag = "momentum_{}d".format(str(period))
+        df[tag] = df.Settle - df.Settle.shift(period)
+        return df
     
     @staticmethod
     def compute_ewma(df):
