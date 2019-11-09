@@ -1,0 +1,1 @@
+all = ["classifiers.py"]
