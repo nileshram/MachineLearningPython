@@ -7,7 +7,7 @@ Author : Nilesh Ramnarain
 from builtins import staticmethod
 from abc import abstractmethod, ABCMeta
 from sklearn import linear_model, svm, model_selection
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import confusion_matrix, roc_curve, roc_auc_score
 import statsmodels.api as sm
 import matplotlib.pyplot as plt
 import numpy as np
@@ -98,7 +98,7 @@ class DataModel:
 class Classification(metaclass=ABCMeta):
     
     def __init__(self):
-        self._logger = logging.getLogger("cqf_log")
+        self._logger = logging.getLogger("cqf_logger")
     
     @abstractmethod
     def _init_classifier(self):
@@ -143,12 +143,18 @@ class LogisticalRegression(Classification):
         self.run_prediction(data, lagged_headers)
         data.model["logistic_return"] = abs(data.model.log_return) * data.model.log_pred
 
-        print("Logistic Return Prediction Data Summary: {}".format(data.model.log_pred.value_counts()))
-        print("Logistic Regression data model: {}, with size {}".format(data.model.head(), len(data.model.log_pred)))
-        print("Logistic Regression score: {}".format(self.lm.score(data.model[lagged_headers], returns_sign)))
+        self._logger.info("Logistic Return Prediction Data Summary: {}".format(data.model.log_pred.value_counts()))
+        self._logger.info("Logistic Regression data model: {}, with size {}".format(data.model.head(), len(data.model.log_pred)))
+        self._logger.info("Logistic Regression score: {}".format(self.lm.score(data.model[lagged_headers], returns_sign)))
         
         self.train_test_split(data=data, features=lagged_headers, size=0.7, test_param=returns_sign)
-
+        
+        #compute predicted probabilities here
+        self.compute_predicted_probabilities(data)
+        
+        #compute metrics for ROC curve
+        self.compute_roc_metrics(data)
+        
     def run_prediction(self, data, x_features):
         self._logger.info("Running Logistical Regression Prediction")
         data.model["log_pred"] = self.lm.predict(data.model[x_features])
@@ -157,25 +163,33 @@ class LogisticalRegression(Classification):
         #default split to half the data set
         if size is None:
             size = 0.5
-        self.x_train, self.x_test, self.y_train, self.y_test = model_selection.train_test_split(data.model[features], test_param,
+        data.x_train, data.x_test, data.y_train, data.y_test = model_selection.train_test_split(data.model[features], test_param,
                                                                             test_size=size, shuffle=False)
          
-        print("Running second logistic classifier on training set")
+        self._logger.info("Running second logistic classifier on training set")
         logit2 = linear_model.LogisticRegression(C = 1e5)
-        logit2.fit(self.x_train, self.y_train)
-        y_pred = logit2.predict(self.x_test)
+        logit2.fit(data.x_train, data.y_train)
+        data.y_pred = logit2.predict(data.x_test)
         print("Confusion matrix as follows:")
-        self.c_matrix = confusion_matrix(self.y_test, y_pred)
-        print(self.c_matrix)
+        data.c_matrix = confusion_matrix(data.y_test, data.y_pred)
+        print(data.c_matrix)
 
-        unique_label = np.unique([self.y_test, y_pred])
+        unique_label = np.unique([data.y_test, data.y_pred])
         cmtx = pd.DataFrame(
-            confusion_matrix(self.y_test, y_pred, labels=unique_label), 
+            confusion_matrix(data.y_test, data.y_pred, labels=unique_label), 
             index=['true:{:}'.format(x) for x in unique_label], 
             columns=['pred:{:}'.format(x) for x in unique_label]
         )
         print(cmtx)
+        return cmtx
+    
+    def compute_predicted_probabilities(self, data):
+        self._logger.info("Computing predicted probabilities on test set of data")
+        data.y_pred_prob = self.lm.predict_proba(data.x_test)[:, 1]
         
+    def compute_roc_metrics(self, data):
+        data.fpr, data.tpr, data.thresholds = roc_curve(data.y_test, data.y_pred_prob)
+    
 class SupportVectorMachine(Classification):
     
     def __init__(self):
@@ -267,16 +281,46 @@ class GraphLib:
         plt.show()
     
     def plot_confusion_matrix(self, matrix, target_names, title):
-        norm_matrix = matrix * 1. / matrix.sum(axis=1)[:, np.newaxis] #standardised confusion matrix
-        plt.imshow(norm_matrix, interpolation='nearest', cmap='bwr')
-        plt.colorbar()
+        #norm_matrix = matrix * 1. / matrix.sum(axis=1)[:, np.newaxis] #standardised confusion matrix
+        #plot heatmap here
+        fig, ax = plt.subplots()
+        cm = plt.cm.get_cmap('bwr')
+        im = ax.imshow(matrix, cmap=cm)
+        
+        #add tick labels
         ticks = np.arange(len(target_names))
-        plt.xticks(ticks, target_names, rotation=45)
-        plt.yticks(ticks, target_names)
+        plt.xticks(ticks, target_names[::-1], rotation=45)
+        plt.yticks(ticks, target_names[::-1])
+        
+        # Loop over data dimensions and create text annotations.
+        for i in range(len(target_names)):
+            for j in range(len(target_names)):
+                text = ax.text(j, i, matrix[i, j],
+                               ha="center", va="center", color="black")
         plt.xlabel("Predicted")
         plt.ylabel("Actual")
         plt.title(title)
-        plt.tight_layout()
+        fig.tight_layout()
+        plt.colorbar(im)
+        plt.show()
+
+    def plot_roc_curve(self, data):
+        #norm_matrix = matrix * 1. / matrix.sum(axis=1)[:, np.newaxis] #standardised confusion matrix
+        #plot heatmap here
+        fig, ax = plt.subplots()
+        ax.plot(data.fpr, data.tpr)
+        ax.plot([0,1],[0,1],'r--',label='Random Classifier')
+        plt.xlim([0.0, 1.0])
+        plt.ylim([0.0, 1.0])
+        
+        plt.title("ROC Curve for Predicted Returns Classifier")
+        plt.xlabel("False positive rate (1 - Specificity)")
+        plt.ylabel("True positive rate (Sensitivity)")
+        #chart rendering
+        plt.minorticks_on()
+        ax.set_facecolor(color='whitesmoke')
+        plt.grid(b=True, which='minor', color='#999999', linestyle='-', alpha=0.2)
+        plt.legend()
         plt.show()
         
 if __name__ == "__main__":
@@ -292,7 +336,8 @@ if __name__ == "__main__":
         support_vector_machinem = SupportVectorMachine()
         support_vector_machinem.run_classifier(data)
          
-#         g = GraphLib()
+        g = GraphLib()
+        g.plot_roc_curve(data)
 #         g.plot_returns(data)
 #         g.plot_confusion_matrix(logit.c_matrix, ["Positive Returns", "Negative Returns"],
 #                                 "Confusion Matrix - Logistic Regression")
