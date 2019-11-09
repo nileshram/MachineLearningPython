@@ -127,7 +127,7 @@ class LogisticalRegression(Classification):
         self._init_classifier()
 
     def _init_classifier(self):
-        self.lm = linear_model.LogisticRegression(C = 1e5)
+        self.lm = linear_model.LogisticRegression(penalty="l2", C = 1e5)
     
     def fit_model(self, x_param, y_param):
         self.lm.fit(x_param, y_param)
