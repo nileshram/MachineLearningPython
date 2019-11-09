@@ -149,11 +149,17 @@ class LogisticalRegression(Classification):
         
         self.train_test_split(data=data, features=lagged_headers, size=0.7, test_param=returns_sign)
         
+        ###Test data
         #compute predicted probabilities here
-        self.compute_predicted_probabilities(data)
-        
+        self.compute_test_data_predicted_probabilities(data)
         #compute metrics for ROC curve
-        self.compute_roc_metrics(data)
+        self.compute_test_data_roc_metrics(data)
+
+        ###Population data
+        #compute predicted probabilities here
+        self.compute_population_data_predicted_probabilities(data, lagged_headers)
+        #compute metrics for ROC curve
+        self.compute_population_data_roc_metrics(data, data.model.log_pred)
         
     def run_prediction(self, data, x_features):
         self._logger.info("Running Logistical Regression Prediction")
@@ -183,12 +189,19 @@ class LogisticalRegression(Classification):
         print(cmtx)
         return cmtx
     
-    def compute_predicted_probabilities(self, data):
+    def compute_test_data_predicted_probabilities(self, data):
         self._logger.info("Computing predicted probabilities on test set of data")
-        data.y_pred_prob = self.lm.predict_proba(data.x_test)[:, 1]
+        data.y_pred_prob_test = self.lm.predict_proba(data.x_test)[:, 1]
         
-    def compute_roc_metrics(self, data):
-        data.fpr, data.tpr, data.thresholds = roc_curve(data.y_test, data.y_pred_prob)
+    def compute_test_data_roc_metrics(self, data):
+        data.fpr_test, data.tpr_test, data.thresholds_test = roc_curve(data.y_test, data.y_pred_prob_test)
+
+    def compute_population_data_predicted_probabilities(self, data, features):
+        self._logger.info("Computing predicted probabilities on population data")
+        data.y_pred_prob_population = self.lm.predict_proba(data.model[features])[:, 1]
+        
+    def compute_population_data_roc_metrics(self, data, y_population):
+        data.fpr_population, data.tpr_population, data.thresholds_population = roc_curve(y_population, data.y_pred_prob_population)
     
 class SupportVectorMachine(Classification):
     
@@ -305,10 +318,9 @@ class GraphLib:
         plt.show()
 
     def plot_roc_curve(self, data):
-        #norm_matrix = matrix * 1. / matrix.sum(axis=1)[:, np.newaxis] #standardised confusion matrix
-        #plot heatmap here
         fig, ax = plt.subplots()
-        ax.plot(data.fpr, data.tpr)
+        ax.plot(data.fpr_test, data.tpr_test, label="Test Data", color="purple")
+        ax.plot(data.fpr_population, data.tpr_population, label="Population Data", color="blue")
         ax.plot([0,1],[0,1],'r--',label='Random Classifier')
         plt.xlim([0.0, 1.0])
         plt.ylim([0.0, 1.0])
