@@ -9,12 +9,14 @@ from abc import abstractmethod, ABCMeta
 from sklearn import linear_model, svm, model_selection
 from sklearn.metrics import confusion_matrix, roc_curve, roc_auc_score
 import statsmodels.api as sm
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import logging.config
 import os
 import json
+
+#import graph library
+from graph.graphlib import GraphLib
 
 class ConfigurationFactory:
     
@@ -78,8 +80,12 @@ class DataManager:
     
 class DataModel:
     
-    def __init__(self):
-        self.model = DataManager.load_data("data", "dax.csv")
+    def __init__(self, filename=None):
+        if filename is None:
+            self.filename = "dax.csv"
+        else:
+            self.filename = filename
+        self.model = DataManager.load_data("data", self.filename)
         self._convert_to_datetime()
         self.compute_model_features()
         self._clean_datamodel()
@@ -271,87 +277,31 @@ class ANN(Classification):
             size = 0.5
         self.x_train, self.x_test, self.y_train, self.y_test = model_selection.train_test_split(data.model[features], test_param,
                                                                             test_size=size, shuffle=False)
-
-class GraphLib:
-    
-    def __init__(self):
-        pass
-    
-    def plot_returns(self, data):
-        ax1 = plt.gca()
-        ax1.plot(data.model.Date, data.model.log_return.cumsum().apply(np.exp),
-                 color="blue")
-        ax1.plot(data.model.Date, data.model.logistic_return.cumsum().apply(np.exp),
-                 color="lime")
-        ax1.plot(data.model.Date, data.model.svm_return.cumsum().apply(np.exp),
-                 color="purple")
-        
-        plt.title("Machine Learning - SVM/Logit Prediction of price returns")
-        plt.minorticks_on()
-        ax1.set_facecolor(color='whitesmoke')
-        plt.grid(b=True, which='minor', color='#999999', linestyle='-', alpha=0.2)
-        plt.legend()
-        plt.show()
-    
-    def plot_confusion_matrix(self, matrix, target_names, title):
-        #norm_matrix = matrix * 1. / matrix.sum(axis=1)[:, np.newaxis] #standardised confusion matrix
-        #plot heatmap here
-        fig, ax = plt.subplots()
-        cm = plt.cm.get_cmap('bwr')
-        im = ax.imshow(matrix, cmap=cm)
-        
-        #add tick labels
-        ticks = np.arange(len(target_names))
-        plt.xticks(ticks, target_names[::-1], rotation=45)
-        plt.yticks(ticks, target_names[::-1])
-        
-        # Loop over data dimensions and create text annotations.
-        for i in range(len(target_names)):
-            for j in range(len(target_names)):
-                text = ax.text(j, i, matrix[i, j],
-                               ha="center", va="center", color="black")
-        plt.xlabel("Predicted")
-        plt.ylabel("Actual")
-        plt.title(title)
-        fig.tight_layout()
-        plt.colorbar(im)
-        plt.show()
-
-    def plot_roc_curve(self, data):
-        fig, ax = plt.subplots()
-        ax.plot(data.fpr_test, data.tpr_test, label="Test Data", color="purple")
-        ax.plot(data.fpr_population, data.tpr_population, label="Population Data", color="blue")
-        ax.plot([0,1],[0,1],'r--',label='Random Classifier')
-        plt.xlim([0.0, 1.0])
-        plt.ylim([0.0, 1.0])
-        
-        plt.title("ROC Curve for Predicted Returns Classifier")
-        plt.xlabel("False positive rate (1 - Specificity)")
-        plt.ylabel("True positive rate (Sensitivity)")
-        #chart rendering
-        plt.minorticks_on()
-        ax.set_facecolor(color='whitesmoke')
-        plt.grid(b=True, which='minor', color='#999999', linestyle='-', alpha=0.2)
-        plt.legend()
-        plt.show()
         
 if __name__ == "__main__":
     ConfigurationFactory._configure_log()
     log = logging.getLogger("cqf_logger")
     log.info("Initialising Program For CQF Exam 3 Machine Learning with Python")
     try:
-        data = DataModel()
+        #define datamodels here
+        dax_data = DataModel(filename="dax.csv")
+        es_50_data = DataModel(filename="eurostoxx.csv")
          
-        logit = LogisticalRegression()
-        logit.run_classifier(data)
-         
-        support_vector_machinem = SupportVectorMachine()
-        support_vector_machinem.run_classifier(data)
+        dax_logit = LogisticalRegression()
+        estoxx_logit = LogisticalRegression()
+        
+        #Run classifier
+        dax_logit.run_classifier(dax_data)
+        estoxx_logit.run_classifier(es_50_data)
+#         support_vector_machinem = SupportVectorMachine()
+#         support_vector_machinem.run_classifier(dax_data)
          
         g = GraphLib()
-        g.plot_roc_curve(data)
+        g.plot_multimodel_confusion_matrix(dax_data, es_50_data, ["Positive Returns", "Negative Returns"], 
+                                           "Confusion Matrix - Logistic Regression")
+#         g.plot_roc_curve(dax_data)
 #         g.plot_returns(data)
-#         g.plot_confusion_matrix(logit.c_matrix, ["Positive Returns", "Negative Returns"],
+#         g.plot_confusion_matrix(dax_data.c_matrix, ["Positive Returns", "Negative Returns"],
 #                                 "Confusion Matrix - Logistic Regression")
          
     except Exception as e:
