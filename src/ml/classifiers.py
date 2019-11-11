@@ -105,7 +105,7 @@ class LogisticalRegression(Classification):
         return cmtx
     
     def compute_test_data_predicted_probabilities(self, data):
-        self._logger.info("Computing predicted probabilities on test set of data")
+        self._logger.info("Computing predicted probabilities on svm_test set of data")
         data.y_pred_prob_test = self.lm.predict_proba(data.x_test)[:, 1]
         
     def compute_test_data_roc_metrics(self, data):

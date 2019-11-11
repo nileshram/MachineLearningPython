@@ -56,12 +56,14 @@ if __name__ == "__main__":
 #         support_vector_machinem.run_classifier(dax_data)
          
         g = GraphLib()
-        g.plot_multimodel_confusion_matrix(dax_data, es_50_data, ["Positive Returns", "Negative Returns"], 
-                                           "Confusion Matrix - Logistic Regression")
+        g.plot_multimodel_roc_curve(dax_data, es_50_data)
+#         g.plot_multimodel_confusion_matrix(dax_data, es_50_data, ["Positive Returns", "Negative Returns"], 
+#                                            "Confusion Matrix - Logistic Regression")
 #         g.plot_roc_curve(dax_data)
 #         g.plot_returns(data)
 #         g.plot_confusion_matrix(dax_data.c_matrix, ["Positive Returns", "Negative Returns"],
 #                                 "Confusion Matrix - Logistic Regression")
+
          
     except Exception as e:
         print(e)
