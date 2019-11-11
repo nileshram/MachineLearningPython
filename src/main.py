@@ -64,7 +64,6 @@ if __name__ == "__main__":
 #         g.plot_confusion_matrix(dax_data.c_matrix, ["Positive Returns", "Negative Returns"],
 #                                 "Confusion Matrix - Logistic Regression")
 
-         
     except Exception as e:
         print(e)
 
