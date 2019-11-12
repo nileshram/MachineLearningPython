@@ -76,7 +76,7 @@ class GraphLib:
         #Duplicate axes here
         ax1 = plt.gca()
         cm = plt.cm.get_cmap('bwr')
-        im1 = ax1.imshow(data_1.c_matrix, cmap=cm)
+        im1 = ax1.imshow(data_1.c_matrix_main, cmap=cm)
 
         #add tick labels
         ticks = np.arange(len(target_names))
@@ -86,7 +86,7 @@ class GraphLib:
         # Loop over data dimensions and create text annotations.
         for i in range(len(target_names)):
             for j in range(len(target_names)):
-                text = ax1.text(j, i, data_1.c_matrix[i, j],
+                text = ax1.text(j, i, data_1.c_matrix_main[i, j],
                                ha="center", va="center", color="black")
         plt.xlabel("Predicted")
         plt.ylabel("Actual")
@@ -96,7 +96,7 @@ class GraphLib:
         plt.subplot(grid[0,1])
         ax2 = plt.gca()
         cm2 = plt.cm.get_cmap('bwr')
-        im2 = ax2.imshow(data_2.c_matrix, cmap=cm2)
+        im2 = ax2.imshow(data_2.c_matrix_main, cmap=cm2)
         
         #add tick labels
         ticks = np.arange(len(target_names))
@@ -106,7 +106,7 @@ class GraphLib:
         # Loop over data dimensions and create text annotations.
         for i in range(len(target_names)):
             for j in range(len(target_names)):
-                text = ax2.text(j, i, data_2.c_matrix[i, j],
+                text = ax2.text(j, i, data_2.c_matrix_main[i, j],
                                ha="center", va="center", color="black")
         plt.xlabel("Predicted")
         plt.ylabel("Actual")

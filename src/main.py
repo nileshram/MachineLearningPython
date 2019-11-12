@@ -52,13 +52,13 @@ if __name__ == "__main__":
         #Run classifier
         dax_logit.run_classifier(dax_data)
         estoxx_logit.run_classifier(es_50_data)
-#         support_vector_machinem = SupportVectorMachine()
-#         support_vector_machinem.run_classifier(dax_data)
+#         support_vector_machine = SupportVectorMachine()
+#         support_vector_machine.run_classifier(dax_data)
          
         g = GraphLib()
-        g.plot_multimodel_roc_curve(dax_data, es_50_data)
-#         g.plot_multimodel_confusion_matrix(dax_data, es_50_data, ["Positive Returns", "Negative Returns"], 
-#                                            "Confusion Matrix - Logistic Regression")
+#         g.plot_multimodel_roc_curve(dax_data, es_50_data)
+        g.plot_multimodel_confusion_matrix(dax_data, es_50_data, ["Positive Returns", "Negative Returns"], 
+                                           "Confusion Matrix - Logistic Regression")
 #         g.plot_roc_curve(dax_data)
 #         g.plot_returns(data)
 #         g.plot_confusion_matrix(dax_data.c_matrix, ["Positive Returns", "Negative Returns"],
