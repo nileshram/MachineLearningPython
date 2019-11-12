@@ -69,28 +69,14 @@ class LogisticalRegression(Classification):
         #Separate Data Parameters of x_features and y_response
         returns_sign = data.model.log_return_sign
         lagged_headers = [header for header in list(data.model) if "lagged" in header]
+        
         #Run main classifier
-        self._run_main_classifier(data, lagged_headers, returns_sign, self.logreg_main)
+        self._run_main_classifier(data=data, x_features=lagged_headers, 
+                                  y_result=returns_sign, classifier=self.logreg_main)
 
-
-        
-        #apply training and test set split here we save 20% of the data to run our test
-        self.train_test_split(data=data, features=lagged_headers, size=0.2, test_param=returns_sign)
-        
-#         #fitting and for test classifier done here
-#         self.fit_model(data.x_train, data.y_train, self.logreg_test)
-#         self.logreg_test.predict(data.x_test)
-#         ###Test data
-#         #compute predicted probabilities here
-#         self.compute_test_data_predicted_probabilities(data, self.logreg_test)
-#         #compute metrics for ROC curve
-#         self.compute_test_data_roc_metrics(data)
-# 
-#         ###Population data
-#         #compute predicted probabilities here
-#         self.compute_population_data_predicted_probabilities(data, lagged_headers, self.logreg_main)
-#         #compute metrics for ROC curve
-#         self.compute_population_data_roc_metrics(data, data.model.log_pred)
+        #Apply train test split on classifier
+        self._run_test_fit_classifier(data=data, x_features=lagged_headers, 
+                                      y_result=returns_sign, classifier=self.logreg_test, size=0.25)
 #         
 #         self._logger.info("Running through various strength values C")
 #         self.test_regularisation_strengths(data.x_train, data.y_train, data.x_test, data.y_test)
@@ -99,12 +85,22 @@ class LogisticalRegression(Classification):
 #         
         self._logger.info("Finished running through classifier")
 
-    def _run_main_classifier(self, data, x_features, y_result, classifier):
+    def _run_main_classifier(self, data=None, x_features=None, y_result=None, classifier=None):
         self._logger.info("Fitting model against specified parameters")
         self.fit_model(data.model[x_features], y_result, classifier)
         self.run_prediction(data, x_features, classifier)
         self.compute_confusion_matrix_main(data)
-
+        self.compute_population_data_roc_metrics(data)
+        self.compute_population_data_predicted_probabilities(data, x_features, classifier)
+    
+    def _run_test_fit_classifier(self, data=None, x_features=None, y_result=None, classifier=None, size=None):
+        self.train_test_split(data=data, features=x_features, size=size, test_param=y_result)
+        self.fit_model(data.x_train, data.y_train, classifier)
+        data.y_pred_test = classifier.predict(data.x_test)
+        self.compute_test_data_roc_metrics(data)
+        self.compute_test_data_predicted_probabilities(data, classifier)
+        
+        
     def compute_confusion_matrix_test_sample(self, data, classifier):
         self.fit_model(data.x_train, data.y_train, classifier)
         y_pred_test = classifier.predict(data.x_test)
@@ -136,18 +132,20 @@ class LogisticalRegression(Classification):
         )
         self._logger.info(cmtx)
         return cmtx
+
+    def compute_test_data_roc_metrics(self, data):
+        data.fpr_test, data.tpr_test, data.thresholds_test = roc_curve(data.y_test, data.y_pred_test)
+        data.roc_auc_score_test = roc_auc_score(data.y_test, data.y_pred_test)
+        self._logger.info("ROC AUC Test Data Score: {}".format(data.roc_auc_score_test))
+
+    def compute_population_data_roc_metrics(self, data):
+        data.fpr_main, data.tpr_main, data.thresholds_main = roc_curve(data.model.log_return_sign, data.model.log_pred)
+        data.roc_auc_score_main = roc_auc_score(data.model.log_return_sign, data.model.log_pred)
+        self._logger.info("ROC AUC Main Data Score: {}".format(data.roc_auc_score_main))
     
     def compute_test_data_predicted_probabilities(self, data, classifier):
         self._logger.info("Computing predicted probabilities on test set of data")
         data.y_pred_prob_test = classifier.predict_proba(data.x_test)[:, 1]
-        
-    def compute_test_data_roc_metrics(self, data):
-        data.fpr_test, data.tpr_test, data.thresholds_test = roc_curve(data.y_test, data.y_pred_prob_test)
-        self._logger.info("ROC AUC Test Data Score: {}".format(roc_auc_score(data.y_test, data.y_pred_prob_test)))
-
-    def compute_population_data_roc_metrics(self, data):
-        data.fpr_main, data.tpr_main, data.thresholds_main = roc_curve(data.model.log_return_sign, data.model.log_pred)
-        self._logger.info("ROC AUC Main Data Score: {}".format(roc_auc_score(data.model.log_return_sign, data.model.log_pred)))
 
     def compute_population_data_predicted_probabilities(self, data, features, classifier):
         self._logger.info("Computing predicted probabilities on population data")

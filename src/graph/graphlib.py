@@ -121,8 +121,8 @@ class GraphLib:
         plt.subplot(grid[0,0])
         #Duplicate axes here
         ax1 = plt.gca()
-        ax1.plot(data_1.fpr_test, data_1.tpr_test, label="Test Data", color="purple")
-        ax1.plot(data_1.fpr_population, data_1.tpr_population, label="Population Data", color="blue")
+        ax1.plot(data_1.fpr_test, data_1.tpr_test, label="Test Data (AUC: {})".format(format(round(data_1.roc_auc_score_test, 4))), color="lime")
+        ax1.plot(data_1.fpr_main, data_1.tpr_main, label="Population Data (AUC: {})".format(round(data_1.roc_auc_score_main, 4)), color="blue")
         ax1.plot([0,1],[0,1],'r--',label='Random Classifier')
         plt.xlim([0.0, 1.0])
         plt.ylim([0.0, 1.0])
@@ -139,8 +139,8 @@ class GraphLib:
 
         plt.subplot(grid[0,1])
         ax2 = plt.gca()
-        ax2.plot(data_2.fpr_test, data_2.tpr_test, label="Test Data", color="purple")
-        ax2.plot(data_2.fpr_population, data_2.tpr_population, label="Population Data", color="blue")
+        ax2.plot(data_2.fpr_test, data_2.tpr_test, label="Test Data (AUC: {})".format(round(data_2.roc_auc_score_test, 4)), color="lime")
+        ax2.plot(data_2.fpr_main, data_2.tpr_main, label="Population Data (AUC: {})".format(round(data_2.roc_auc_score_main, 4)), color="blue")
         ax2.plot([0,1],[0,1],'r--',label='Random Classifier')
         plt.xlim([0.0, 1.0])
         plt.ylim([0.0, 1.0])
