@@ -66,14 +66,13 @@ class LogisticalRegression(Classification):
         
     def run_classifier(self, data):
         self._logger.info("Running Logisitical Regression Classifier")
-        #perform the regression on returns here
+        #Separate Data Parameters of x_features and y_response
         returns_sign = data.model.log_return_sign
         lagged_headers = [header for header in list(data.model) if "lagged" in header]
-        #Fitting for entire population done here using main classifier
-        self._logger.info("Fitting model against specified parameters")
-        self.fit_model(data.model[lagged_headers], returns_sign, self.logreg_main)
-        self.run_prediction(data, lagged_headers, self.logreg_main)
-        self.compute_confusion_matrix_main(data)
+        #Run main classifier
+        self._run_main_classifier(data, lagged_headers, returns_sign, self.logreg_main)
+
+
         
         #apply training and test set split here we save 20% of the data to run our test
         self.train_test_split(data=data, features=lagged_headers, size=0.2, test_param=returns_sign)
@@ -100,7 +99,12 @@ class LogisticalRegression(Classification):
 #         
         self._logger.info("Finished running through classifier")
 
-    
+    def _run_main_classifier(self, data, x_features, y_result, classifier):
+        self._logger.info("Fitting model against specified parameters")
+        self.fit_model(data.model[x_features], y_result, classifier)
+        self.run_prediction(data, x_features, classifier)
+        self.compute_confusion_matrix_main(data)
+
     def compute_confusion_matrix_test_sample(self, data, classifier):
         self.fit_model(data.x_train, data.y_train, classifier)
         y_pred_test = classifier.predict(data.x_test)
