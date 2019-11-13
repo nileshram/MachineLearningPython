@@ -81,7 +81,7 @@ class LogisticalRegression(Classification):
         self._logger.info("Running through various strength values C")
         self.test_regularisation_strengths(data.x_train, data.y_train, data.x_test, data.y_test)
 #         
-#         self.get_predicted_probabilities(data, lagged_headers, self.logreg_main)
+        self.get_predicted_probabilities(data, lagged_headers, self.logreg_main)
 #         
         self._logger.info("Finished running through classifier")
 
