@@ -194,5 +194,37 @@ class GraphLib:
         plt.legend()
         #display plots
         plt.show()
+
+    def plot_multimodel_pl_backtest(self, data_1, data_2):
+        #define gridspec here
+        grid = plt.GridSpec(1, 2, wspace=0.4, hspace=0.3)
+        #Add graphs to gridspec dynamically
+        plt.subplot(grid[0,0])
+        #Duplicate axes here
+        ax1 = plt.gca()
+        ax1.plot(data_1.model.Date, list(data_1.pl_cumsum)[1:], label="Cumulative sum P&L", color="blue")
         
+        plt.title("P&L Backtesting Betting - DAX")
+        plt.xlabel("Date")
+        plt.ylabel("Portfolio Value (EUR)")
+        #chart rendering
+        plt.minorticks_on()
+        ax1.set_facecolor(color='whitesmoke')
+        plt.grid(b=True, which='minor', color='#999999', linestyle='-', alpha=0.2)
+        plt.legend()
+        
+        plt.subplot(grid[0,1])
+        ax2 = plt.gca()
+        ax2.plot(data_2.model.Date, list(data_2.pl_cumsum)[1:], label="Cumulative sum P&L", color="purple")
+        
+        plt.title("P&L Backtesting Betting - ESTOXX 50")
+        plt.xlabel("Date")
+        plt.ylabel("Portfolio Value (EUR)")
+        #chart rendering
+        plt.minorticks_on()
+        ax2.set_facecolor(color='whitesmoke')
+        plt.grid(b=True, which='minor', color='#999999', linestyle='-', alpha=0.2)
+        plt.legend()
+        #display plots
+        plt.show()
     

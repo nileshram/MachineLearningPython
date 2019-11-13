@@ -43,35 +43,39 @@ class PLBacktesting:
         pl_tracker = []
         pl_tracker.append(initial_capital)
         for x in range(len(actual_returns_sign)):
-            if pred_return_sign[x] == actual_returns_sign[x]:
-                if pred_return_sign[x] > 0:
-                    if lower_bound < positive_return_prob[x] < upper_bound:
-                        pl = bet_size * initial_capital * log_return[x] * 100
-                    else:
-                        pl = 0
-                elif pred_return_sign[x] < 0:
-                    if lower_bound < negative_return_prob[x] < upper_bound:
-                        pl = bet_size * initial_capital * -log_return[x] * 100
+            if initial_capital >= 0:
+                if pred_return_sign[x] == actual_returns_sign[x]:
+                    if pred_return_sign[x] > 0:
+                        if lower_bound < positive_return_prob[x] < upper_bound:
+                            pl = bet_size * initial_capital * log_return[x] * 100
+                        else:
+                            pl = 0
+                    elif pred_return_sign[x] < 0:
+                        if lower_bound < negative_return_prob[x] < upper_bound:
+                            pl = bet_size * initial_capital * -log_return[x] * 100
+                        else:
+                            pl = 0
                     else:
                         pl = 0
                 else:
-                    pl = 0
+                    if pred_return_sign[x] > 0:
+                        if lower_bound < positive_return_prob[x] < upper_bound:
+                            pl = bet_size * initial_capital * log_return[x] * 100
+                        else:
+                            pl = 0
+                    elif pred_return_sign[x] < 0:
+                        if lower_bound < negative_return_prob[x] < upper_bound:
+                            pl = bet_size * initial_capital * -log_return[x] * 100
+                        else:
+                            pl = 0
+                    else:
+                        pl = 0
             else:
-                if pred_return_sign[x] > 0:
-                    if lower_bound < positive_return_prob[x] < upper_bound:
-                        pl = bet_size * initial_capital * log_return[x] * 100
-                    else:
-                        pl = 0
-                elif pred_return_sign[x] < 0:
-                    if lower_bound < negative_return_prob[x] < upper_bound:
-                        pl = bet_size * initial_capital * -log_return[x] * 100
-                    else:
-                        pl = 0
-                else:
-                    pl = 0
+                pl = 0
+            initial_capital += pl
             pl_tracker.append(pl)
-        setattr(data, "pl_tracker", pl_tracker)
-        setattr(data, "pl_cumsum", np.cumsum(pl_tracker))
+            setattr(data, "pl_tracker", pl_tracker)
+            setattr(data, "pl_cumsum", np.cumsum(pl_tracker))
                         
 
         

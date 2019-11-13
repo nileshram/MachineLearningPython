@@ -70,7 +70,8 @@ if __name__ == "__main__":
         print("ESTOXX data pl cumsum: {}".format(es_50_data.pl_cumsum))
         
         g = GraphLib()
-        g.plot_transition_probabilities_multi_model(dax_data, es_50_data)
+        g.plot_multimodel_pl_backtest(dax_data, es_50_data)
+#         g.plot_transition_probabilities_multi_model(dax_data, es_50_data)
 #         g.plot_multimodel_roc_curve(dax_data, es_50_data)
 #         g.plot_multimodel_confusion_matrix(dax_data, es_50_data, ["Positive Returns", "Negative Returns"], 
 #                                            "Confusion Matrix - Logistic Regression")
