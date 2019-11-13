@@ -166,30 +166,8 @@ class GraphLib:
         plt.subplot(grid[0,0])
         #Duplicate axes here
         ax1 = plt.gca()
-        #prepare data here:
-        actual_returns_sign = list(data_1.model.log_return_sign)
-        pred_return_sign = list(data_1.model.log_pred)
-        positive_return_prob = list(data_1.pred_prob[:, 1])
-        negative_return_prob = list(data_1.pred_prob[:, 0])
-        correct_prob = []
-        incorrect_prob = []
-        #now to get plot co-ordinates
-        for x in range(len(actual_returns_sign)):
-            if pred_return_sign[x] == actual_returns_sign[x]:
-                if pred_return_sign[x] > 0:
-                    correct_prob.append([1, positive_return_prob[x]])
-                else:
-                    correct_prob.append([-1, negative_return_prob[x]])
-            else:
-                if pred_return_sign[x] > 0:
-                    incorrect_prob.append([1, positive_return_prob[x]])
-                else:
-                    incorrect_prob.append([-1, negative_return_prob[x]])
-        ax1.scatter([x[0]for x in correct_prob], [x[1] for x in correct_prob], label="Correct Prediction: {}".format(len(correct_prob)), color="lime")
-        ax1.scatter([x[0]for x in incorrect_prob], [x[1] for x in incorrect_prob], label="Incorrect Prediction: {}".format(len(incorrect_prob)), color="red")
-#         ax1.plot([0,1],[0,1],'r--',label='Random Classifier')
-#         plt.xlim([0.0, 1.0])
-#         plt.ylim([0.0, 1.0])
+        ax1.scatter([x[0]for x in data_1.correct_prob], [x[1] for x in data_1.correct_prob], label="Correct Prediction: {}".format(len(data_1.correct_prob)), color="lime")
+        ax1.scatter([x[0]for x in data_1.incorrect_prob], [x[1] for x in data_1.incorrect_prob], label="Incorrect Prediction: {}".format(len(data_1.incorrect_prob)), color="red")
         
         plt.title("Transition Probability Prediction - DAX")
         plt.xlabel("Returns Direction")
@@ -203,30 +181,8 @@ class GraphLib:
 
         plt.subplot(grid[0,1])
         ax2 = plt.gca()
-        #prepare data here:
-        actual_returns_sign = list(data_2.model.log_return_sign)
-        pred_return_sign = list(data_2.model.log_pred)
-        positive_return_prob = list(data_2.pred_prob[:, 1])
-        negative_return_prob = list(data_2.pred_prob[:, 0])
-        correct_prob = []
-        incorrect_prob = []
-        #now to get plot co-ordinates
-        for x in range(len(actual_returns_sign)):
-            if pred_return_sign[x] == actual_returns_sign[x]:
-                if pred_return_sign[x] > 0:
-                    correct_prob.append([1, positive_return_prob[x]])
-                else:
-                    correct_prob.append([-1, negative_return_prob[x]])
-            else:
-                if pred_return_sign[x] > 0:
-                    incorrect_prob.append([1, positive_return_prob[x]])
-                else:
-                    incorrect_prob.append([-1, negative_return_prob[x]])
-        ax2.scatter([x[0]for x in correct_prob], [x[1] for x in correct_prob], label="Correct Prediction: {}".format(len(correct_prob)), color="lime")
-        ax2.scatter([x[0]for x in incorrect_prob], [x[1] for x in incorrect_prob], label="Incorrect Prediction: {}".format(len(incorrect_prob)), color="red")
-#         ax1.plot([0,1],[0,1],'r--',label='Random Classifier')
-#         plt.xlim([0.0, 1.0])
-#         plt.ylim([0.0, 1.0])
+        ax2.scatter([x[0]for x in data_2.correct_prob], [x[1] for x in data_2.correct_prob], label="Correct Prediction: {}".format(len(data_2.correct_prob)), color="lime")
+        ax2.scatter([x[0]for x in data_2.incorrect_prob], [x[1] for x in data_2.incorrect_prob], label="Incorrect Prediction: {}".format(len(data_2.incorrect_prob)), color="red")
         
         plt.title("Transition Probability Prediction - ESTOXX")
         plt.xlabel("Returns Direction")
