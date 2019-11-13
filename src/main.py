@@ -64,11 +64,6 @@ if __name__ == "__main__":
         PLBacktesting.compute_pl_backtest(data=es_50_data, initial_capital=500000, bet_size=0.25, 
                                           upper_bound=0.7, lower_bound=0.55)
         
-        print("DAX data pl tracker: {}".format(dax_data.pl_tracker))
-        print("DAX data pl cumsum: {}".format(dax_data.pl_cumsum))
-        print("ESTOXX data pl tracker: {}".format(es_50_data.pl_tracker))
-        print("ESTOXX data pl cumsum: {}".format(es_50_data.pl_cumsum))
-        
         g = GraphLib()
         g.plot_multimodel_pl_backtest(dax_data, es_50_data)
 #         g.plot_transition_probabilities_multi_model(dax_data, es_50_data)
