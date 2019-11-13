@@ -202,8 +202,9 @@ class GraphLib:
         plt.subplot(grid[0,0])
         #Duplicate axes here
         ax1 = plt.gca()
+        ax2 = ax1.twinx()
         ax1.plot(data_1.model.Date, list(data_1.pl_cumsum)[1:], label="Cumulative sum P&L", color="blue")
-        
+        ax2.plot(data_1.model.Date, data_1.model.Settle, label="Daily Settle Price", color="green")
         plt.title("P&L Backtesting Betting - DAX")
         plt.xlabel("Date")
         plt.ylabel("Portfolio Value (EUR)")
@@ -214,15 +215,16 @@ class GraphLib:
         plt.legend()
         
         plt.subplot(grid[0,1])
-        ax2 = plt.gca()
-        ax2.plot(data_2.model.Date, list(data_2.pl_cumsum)[1:], label="Cumulative sum P&L", color="purple")
-        
+        ax3 = plt.gca()
+        ax4 = ax3.twinx()
+        ax3.plot(data_2.model.Date, list(data_2.pl_cumsum)[1:], label="Cumulative sum P&L", color="purple")
+        ax4.plot(data_2.model.Date, data_2.model.Settle, label="Daily Settle Price", color="green")
         plt.title("P&L Backtesting Betting - ESTOXX 50")
         plt.xlabel("Date")
         plt.ylabel("Portfolio Value (EUR)")
         #chart rendering
         plt.minorticks_on()
-        ax2.set_facecolor(color='whitesmoke')
+        ax3.set_facecolor(color='whitesmoke')
         plt.grid(b=True, which='minor', color='#999999', linestyle='-', alpha=0.2)
         plt.legend()
         #display plots

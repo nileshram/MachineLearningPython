@@ -59,9 +59,9 @@ if __name__ == "__main__":
         #Add PL backtest
         PLBacktesting.compute_transitional_probabilities(dax_data)
         PLBacktesting.compute_transitional_probabilities(es_50_data)
-        PLBacktesting.compute_pl_backtest(data=dax_data, initial_capital=500000, bet_size=0.25, 
+        PLBacktesting.compute_pl_backtest(data=dax_data, initial_capital=500000, bet_size=0.1, 
                                           upper_bound=0.7, lower_bound=0.55)
-        PLBacktesting.compute_pl_backtest(data=es_50_data, initial_capital=500000, bet_size=0.25, 
+        PLBacktesting.compute_pl_backtest(data=es_50_data, initial_capital=500000, bet_size=0.1, 
                                           upper_bound=0.7, lower_bound=0.55)
         
         g = GraphLib()
