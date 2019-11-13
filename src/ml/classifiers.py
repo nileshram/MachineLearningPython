@@ -65,7 +65,7 @@ class LogisticalRegression(Classification):
         self._logger.info("Finished test train data with split ratio: Training data {} Test data {} ".format(1 - size, size))
         
     def run_classifier(self, data):
-        self._logger.info("Running Logisitical Regression Classifier")
+        self._logger.info("Running Logisitical Regression Classifier for {}".format(data.filename))
         #Separate Data Parameters of x_features and y_response
         returns_sign = data.model.log_return_sign
         lagged_headers = [header for header in list(data.model) if "lagged" in header]
@@ -78,8 +78,8 @@ class LogisticalRegression(Classification):
         self._run_test_fit_classifier(data=data, x_features=lagged_headers, 
                                       y_result=returns_sign, classifier=self.logreg_test, size=0.25)
 #         
-#         self._logger.info("Running through various strength values C")
-#         self.test_regularisation_strengths(data.x_train, data.y_train, data.x_test, data.y_test)
+        self._logger.info("Running through various strength values C")
+        self.test_regularisation_strengths(data.x_train, data.y_train, data.x_test, data.y_test)
 #         
 #         self.get_predicted_probabilities(data, lagged_headers, self.logreg_main)
 #         
@@ -99,7 +99,6 @@ class LogisticalRegression(Classification):
         data.y_pred_test = classifier.predict(data.x_test)
         self.compute_test_data_roc_metrics(data)
         self.compute_test_data_predicted_probabilities(data, classifier)
-        
         
     def compute_confusion_matrix_test_sample(self, data, classifier):
         self.fit_model(data.x_train, data.y_train, classifier)
@@ -156,7 +155,7 @@ class LogisticalRegression(Classification):
         self._logger.info("Computed predicted probabilities as follows: {}".format(data.pred_prob))
         
     def test_regularisation_strengths(self, x_train, y_train, x_test, y_test):
-        strengths = [1000000, 100000, 10000, 1000, 100, 10, 1, .1, .001]
+        strengths = [100000, 10000, 1000, 100, 10, 1, .1, .001]
         #Create a scaler object
         sc = StandardScaler()
         #Fit the scaler to the training data and transform
@@ -165,7 +164,7 @@ class LogisticalRegression(Classification):
         x_test_std = sc.transform(x_test)
         
         for c in strengths:
-            clf = linear_model.LogisticRegression(penalty='l2', C=c) #solver='liblinear'
+            clf = linear_model.LogisticRegression(penalty='l1', C=c) #solver='liblinear'
             clf.fit(x_train, y_train)
             self._logger.info('C: {}'.format(c))
             self._logger.info('Coefficient of each feature: {}'.format(clf.coef_))
