@@ -11,7 +11,7 @@ import json
 #import graph library
 from graph.graphlib import GraphLib
 #import pl backtesting library
-from backtesting.pl_backtest import PLBacktesting, PLBacktestingEngine
+from backtesting.pl_backtest import PLBacktestingEngine
 #import datamodel
 from model.datamodel import DataModel
 #import ml-classifiers

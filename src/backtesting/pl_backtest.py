@@ -4,11 +4,12 @@ Created on 11 Nov 2019
 @author: nilesh
 '''
 import numpy as np
+import logging 
 
 class PLBacktestingEngine:
     
     def __init__(self):
-        pass
+        self._logger = logging.getLogger("cqf_logger")
     
     def _init_params(self, data):
         self.log_return = list(data.model.log_return)
@@ -16,13 +17,6 @@ class PLBacktestingEngine:
         self.pred_return_sign = list(data.model.log_pred)
         self.positive_return_prob = list(data.pred_prob[:, 1])
         self.negative_return_prob = list(data.pred_prob[:, 0])
-    
-    def run_backtest(self, data=None, initial_capital=None, bet_size=None, upper_bound=None, lower_bound=None):
-        self._init_params(data)
-        pl_tracker = self._run(initial_capital=initial_capital, bet_size=bet_size, upper_bound=upper_bound,
-                               lower_bound=lower_bound)
-        setattr(data, "pl_tracker", pl_tracker)
-        setattr(data, "pl_cumsum", np.cumsum(pl_tracker))
 
     def _run(self, initial_capital=None, bet_size=None,
                             upper_bound=None, lower_bound=None):
@@ -46,6 +40,40 @@ class PLBacktestingEngine:
             pl_tracker.append(pl)
         return pl_tracker
     
+    def _pretty_print_trading_stats(self, data):
+        self._logger.info("Asset name: {}".format(data.filename))
+        self._logger.info("Max Portfolio Value: {}".format(max(data.pl_cumsum)))
+        self._logger.info("Value @ End: {}".format(list(data.pl_cumsum)[-1]))
+        self._logger.info("Total time in market: {}".format(self._compute_time_in_market(data)))
+        self._logger.info("Longest market win streak: {}".format(self._compute_longest_win_streak(data)))
+
+    def _compute_time_in_market(self, data):
+        running_total = 0
+        for pl in list(data.pl_cumsum):
+            if not pl <= 0:
+                running_total += 1
+        return running_total
+    
+    def _compute_longest_win_streak(self, data):
+        max_streak = 0
+        running_streak = 0
+        for pl in range(len(data.pl_cumsum) - 1):
+            if data.pl_cumsum[pl] < data.pl_cumsum[pl + 1]:
+                running_streak += 1
+            else:
+                if running_streak > max_streak:
+                    max_streak = running_streak
+                    running_streak = 0 #reset running streak
+        return max_streak
+            
+    def run_backtest(self, data=None, initial_capital=None, bet_size=None, upper_bound=None, lower_bound=None):
+        self._init_params(data)
+        pl_tracker = self._run(initial_capital=initial_capital, bet_size=bet_size, upper_bound=upper_bound,
+                               lower_bound=lower_bound)
+        setattr(data, "pl_tracker", pl_tracker)
+        setattr(data, "pl_cumsum", np.cumsum(pl_tracker))
+        self._pretty_print_trading_stats(data=data)
+        
     @staticmethod
     def compute_transitional_probabilities(data):
         #prepare data here:
