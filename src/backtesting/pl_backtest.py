@@ -26,12 +26,12 @@ class PLBacktestingEngine:
             if initial_capital >= 0:
                 if self.pred_return_sign[x] > 0:
                     if lower_bound < self.positive_return_prob[x] < upper_bound:
-                        pl = bet_size * initial_capital * self.log_return[x] * 100
+                        pl = bet_size * initial_capital * self.log_return[x] 
                     else:
                         pl = 0
                 elif self.pred_return_sign[x] < 0:
                     if lower_bound < self.negative_return_prob[x] < upper_bound:
-                        pl = bet_size * initial_capital * -self.log_return[x] * 100
+                        pl = bet_size * initial_capital * -self.log_return[x] 
                     else:
                         pl = 0
             else:
@@ -45,7 +45,8 @@ class PLBacktestingEngine:
         self._logger.info("Max Portfolio Value: {}".format(max(data.pl_cumsum)))
         self._logger.info("Value @ End: {}".format(list(data.pl_cumsum)[-1]))
         self._logger.info("Total time in market: {}".format(self._compute_time_in_market(data)))
-        self._logger.info("Longest market win streak: {}".format(self._compute_longest_win_streak(data)))
+        self._logger.info("Longest market win streak: {} with P&L {}".format(self._compute_longest_win_streak(data)[0],
+                                                                    self._compute_longest_win_streak(data)[1]))
 
     def _compute_time_in_market(self, data):
         running_total = 0
@@ -57,14 +58,19 @@ class PLBacktestingEngine:
     def _compute_longest_win_streak(self, data):
         max_streak = 0
         running_streak = 0
+        max_pl_accumulated = 0
+        running_pl_accumulated = 0
         for pl in range(len(data.pl_cumsum) - 1):
             if data.pl_cumsum[pl] < data.pl_cumsum[pl + 1]:
                 running_streak += 1
+                running_pl_accumulated += data.pl_tracker[pl + 1]
             else:
                 if running_streak > max_streak:
                     max_streak = running_streak
+                    max_pl_accumulated = running_pl_accumulated
                     running_streak = 0 #reset running streak
-        return max_streak
+                    running_pl_accumulated = 0
+        return max_streak, max_pl_accumulated
             
     def run_backtest(self, data=None, initial_capital=None, bet_size=None, upper_bound=None, lower_bound=None):
         self._init_params(data)
