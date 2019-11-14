@@ -36,6 +36,16 @@ class Classification(metaclass=ABCMeta):
     @abstractmethod
     def train_test_split(self):
         raise NotImplementedError("Should implement method train_test_split()")
+
+    def _pretty_print_confusion_matrix(self, y_test, y_pred):
+        unique_label = np.unique([y_test, y_pred])
+        c_matrix = pd.DataFrame(
+            confusion_matrix(y_test, y_pred, labels=unique_label), 
+            index=['true:{:}'.format(x) for x in unique_label], 
+            columns=['pred:{:}'.format(x) for x in unique_label]
+        )
+        self._logger.info(c_matrix)
+        return c_matrix
     
 class LogisticalRegression(Classification):
     
@@ -44,8 +54,8 @@ class LogisticalRegression(Classification):
         self._init_classifier()
 
     def _init_classifier(self):
-        self.logreg_main = linear_model.LogisticRegression(penalty="l2", C = 100)
-        self.logreg_test = linear_model.LogisticRegression(penalty="l2", C = 100)
+        self.logreg_main = linear_model.LogisticRegression(penalty="l2", C = 1e6)
+        self.logreg_test = linear_model.LogisticRegression(penalty="l2", C = 1e6)
     
     def fit_model(self, x_param, y_param, classifier):
         classifier.fit(x_param, y_param)
@@ -109,14 +119,9 @@ class LogisticalRegression(Classification):
         self._logger.info(data.c_matrix_test)
         
         #pretty print confusion matrix with data labels
-        unique_label = np.unique([data.y_test, data.y_pred_test])
-        cmtx = pd.DataFrame(
-            confusion_matrix(data.y_test, data.y_pred_test, labels=unique_label), 
-            index=['true:{:}'.format(x) for x in unique_label], 
-            columns=['pred:{:}'.format(x) for x in unique_label]
-        )
-        self._logger.info(cmtx)
-        return cmtx
+        c_matrix = self._pretty_print_confusion_matrix(data.y_test, y_pred_test)
+        return c_matrix
+    
 
     def compute_confusion_matrix_main(self, data):
         self._logger.info("Computing Confusion matrix for main data as follows:")
@@ -124,14 +129,8 @@ class LogisticalRegression(Classification):
         self._logger.info(data.c_matrix_main)
         
         #pretty print confusion matrix with data labels
-        unique_label = np.unique([data.model.log_return_sign, data.model.log_pred])
-        cmtx = pd.DataFrame(
-            confusion_matrix(data.model.log_return_sign, data.model.log_pred, labels=unique_label), 
-            index=['true:{:}'.format(x) for x in unique_label], 
-            columns=['pred:{:}'.format(x) for x in unique_label]
-        )
-        self._logger.info(cmtx)
-        return cmtx
+        c_matrix = self._pretty_print_confusion_matrix(data.model.log_return_sign, data.model.log_pred)
+        return c_matrix
 
     def compute_test_data_roc_metrics(self, data):
         data.fpr_test, data.tpr_test, data.thresholds_test = roc_curve(data.y_test, data.y_pred_test)
