@@ -55,18 +55,13 @@ if __name__ == "__main__":
         dax_logit.run_classifier(dax_data)
         estoxx_logit.run_classifier(es_50_data)
 #         support_vector_machine = SupportVectorMachine()
-#         support_vector_machine.run_classifier(dax_data)
-        #Add PL backtest
-        pl = PLBacktestingEngine()
-        pl.run_backtest(data=dax_data, initial_capital=500000, bet_size=0.1, upper_bound=0.7, lower_bound=0.55)
-        pl.run_backtest(data=es_50_data, initial_capital=500000, bet_size=0.1, upper_bound=0.7, lower_bound=0.55)
-         
+#         support_vector_machine.run_classifier(dax_data))
+#          
         g = GraphLib()
-        g.plot_multimodel_pl_backtest(dax_data, es_50_data)
 #         g.plot_transition_probabilities_multi_model(dax_data, es_50_data)
 #         g.plot_multimodel_roc_curve(dax_data, es_50_data)
-#         g.plot_multimodel_confusion_matrix(dax_data, es_50_data, ["Positive Returns", "Negative Returns"], 
-#                                            "Confusion Matrix - Logistic Regression")
+        g.plot_multimodel_confusion_matrix(dax_data, es_50_data, ["Positive Returns", "Negative Returns"], 
+                                           "Confusion Matrix - Logistic Regression")
 #         g.plot_roc_curve(dax_data)
 #         g.plot_returns(data)
 #         g.plot_confusion_matrix(dax_data.c_matrix, ["Positive Returns", "Negative Returns"],

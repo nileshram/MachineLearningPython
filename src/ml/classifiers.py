@@ -5,8 +5,9 @@ Created on 9 Nov 2019
 '''
 from abc import abstractmethod, ABCMeta
 from sklearn import linear_model, svm, model_selection
-from sklearn.metrics import confusion_matrix, roc_curve, roc_auc_score
+from sklearn.metrics import confusion_matrix, roc_curve, roc_auc_score, classification_report
 from sklearn.preprocessing import StandardScaler
+from sklearn.grid_search import GridSearchCV
 import logging
 import numpy as np
 import pandas as pd
@@ -43,8 +44,8 @@ class LogisticalRegression(Classification):
         self._init_classifier()
 
     def _init_classifier(self):
-        self.logreg_main = linear_model.LogisticRegression(penalty="l2", C = 1e6)
-        self.logreg_test = linear_model.LogisticRegression(penalty="l2", C = 1e6)
+        self.logreg_main = linear_model.LogisticRegression(penalty="l2", C = 100)
+        self.logreg_test = linear_model.LogisticRegression(penalty="l2", C = 100)
     
     def fit_model(self, x_param, y_param, classifier):
         classifier.fit(x_param, y_param)
@@ -73,13 +74,13 @@ class LogisticalRegression(Classification):
         #Run main classifier
         self._run_main_classifier(data=data, x_features=lagged_headers, 
                                   y_result=returns_sign, classifier=self.logreg_main)
-
+        
         #Apply train test split on classifier
         self._run_test_fit_classifier(data=data, x_features=lagged_headers, 
                                       y_result=returns_sign, classifier=self.logreg_test, size=0.25)
-#         
-        self._logger.info("Running through various strength values C")
-        self.test_regularisation_strengths(data.x_train, data.y_train, data.x_test, data.y_test)
+        
+        #Perform optimal gridsearch for parameters here
+        self.apply_gridsearch(data)
 #         
         self.get_predicted_probabilities(data, lagged_headers, self.logreg_main)
 #         
@@ -170,6 +171,18 @@ class LogisticalRegression(Classification):
             self._logger.info('Coefficient of each feature: {}'.format(clf.coef_))
             self._logger.info('Training accuracy: {}'.format(clf.score(x_train_std, y_train)))
             self._logger.info('Test accuracy: {}'.format(clf.score(x_test_std, y_test)))
+    
+    def apply_gridsearch(self, data):
+        self._params = {"C" : [100000, 10000, 1000, 100, 10, 1, .1, .001],
+                        "penalty" : ["l1", "l2"]}
+        self._grid = GridSearchCV(linear_model.LogisticRegression(),
+                                  self._params, verbose=3)
+        self._grid.fit(data.x_train, data.y_train)
+        self._logger.info("Best params to use for chosen classifier: {}".format(self._grid.best_params_))
+        grid_predictions = self._grid.predict(data.x_test)
+        self._logger.info("Confusion Matrix as Follows: {}".format(confusion_matrix(data.y_test, grid_predictions)))
+        self._logger.info("Classification Report: {}".format(classification_report(data.y_test, grid_predictions)))
+    
     
 class SupportVectorMachine(Classification):
     
