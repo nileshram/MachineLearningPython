@@ -71,6 +71,28 @@ class PLBacktestingEngine:
                     running_streak = 0 #reset running streak
                     running_pl_accumulated = 0
         return max_streak, max_pl_accumulated
+    
+    def _get_long_trades(self, data=None, initial_capital=None,
+                            upper_bound=None, lower_bound=None):
+        trade_tracker = []
+        for x in range(len(self.actual_returns_sign)):
+            if initial_capital >= 0:
+                if self.pred_return_sign[x] > 0:
+                    if lower_bound < self.positive_return_prob[x] < upper_bound:
+                        long_trade = (list(data.model.Date)[x], list(data.pl_cumsum)[x+1])
+                        trade_tracker.append(long_trade)
+        return trade_tracker
+
+    def _get_short_trades(self, data=None, initial_capital=None,
+                            upper_bound=None, lower_bound=None):
+        trade_tracker = []
+        for x in range(len(self.actual_returns_sign)):
+            if initial_capital >= 0:
+                if self.pred_return_sign[x] < 0:
+                    if lower_bound < self.negative_return_prob[x] < upper_bound:
+                        short_trade = (list(data.model.Date)[x], list(data.pl_cumsum)[x+1])
+                        trade_tracker.append(short_trade)
+        return trade_tracker
             
     def run_backtest(self, data=None, initial_capital=None, bet_size=None, upper_bound=None, lower_bound=None):
         self._init_params(data)
@@ -78,6 +100,10 @@ class PLBacktestingEngine:
                                lower_bound=lower_bound)
         setattr(data, "pl_tracker", pl_tracker)
         setattr(data, "pl_cumsum", np.cumsum(pl_tracker))
+        setattr(data, "long_trade_marker", self._get_long_trades(data=data, initial_capital=initial_capital, 
+                                                                 upper_bound=upper_bound, lower_bound=lower_bound))
+        setattr(data, "short_trade_marker", self._get_short_trades(data=data, initial_capital=initial_capital, 
+                                                                 upper_bound=upper_bound, lower_bound=lower_bound))
         self._pretty_print_trading_stats(data=data)
         
     @staticmethod
