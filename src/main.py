@@ -11,7 +11,7 @@ import json
 #import graph library
 from graph.graphlib import GraphLib
 #import pl backtesting library
-from backtesting.pl_backtest import PLBacktesting
+from backtesting.pl_backtest import PLBacktesting, PLBacktestingEngine
 #import datamodel
 from model.datamodel import DataModel
 #import ml-classifiers
@@ -57,12 +57,15 @@ if __name__ == "__main__":
 #         support_vector_machine = SupportVectorMachine()
 #         support_vector_machine.run_classifier(dax_data)
         #Add PL backtest
-        PLBacktesting.compute_transitional_probabilities(dax_data)
-        PLBacktesting.compute_transitional_probabilities(es_50_data)
-        PLBacktesting.compute_pl_backtest(data=dax_data, initial_capital=500000, bet_size=0.1, 
-                                          upper_bound=0.7, lower_bound=0.55)
-        PLBacktesting.compute_pl_backtest(data=es_50_data, initial_capital=500000, bet_size=0.1, 
-                                          upper_bound=0.7, lower_bound=0.55)
+#         PLBacktesting.compute_transitional_probabilities(dax_data)
+#         PLBacktesting.compute_transitional_probabilities(es_50_data)
+#         PLBacktesting.compute_pl_backtest(data=dax_data, initial_capital=500000, bet_size=0.1, 
+#                                           upper_bound=0.7, lower_bound=0.55)
+#         PLBacktesting.compute_pl_backtest(data=es_50_data, initial_capital=500000, bet_size=0.1, 
+#                                           upper_bound=0.7, lower_bound=0.55)
+        pl = PLBacktestingEngine()
+        pl.run_backtest(data=dax_data, initial_capital=500000, bet_size=0.1, upper_bound=0.7, lower_bound=0.55)
+        pl.run_backtest(data=es_50_data, initial_capital=500000, bet_size=0.1, upper_bound=0.7, lower_bound=0.55)
         
         g = GraphLib()
         g.plot_multimodel_pl_backtest(dax_data, es_50_data)
