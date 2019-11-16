@@ -33,9 +33,14 @@ class Classification(metaclass=ABCMeta):
     def run_prediction(self):
         raise NotImplementedError("Should implement method run_prediction()")
     
-    @abstractmethod
-    def train_test_split(self):
-        raise NotImplementedError("Should implement method train_test_split()")
+    def train_test_split(self, data=None, features=None, size=None, test_param=None):
+        #default split to half the data set
+        if size is None:
+            size = 0.5
+        data.x_train, data.x_test, data.y_train, data.y_test = model_selection.train_test_split(data.model[features], test_param,
+                                                                            test_size=size, shuffle=False)
+         
+        self._logger.info("Finished test train data with split ratio: Training data {} Test data {} ".format(1 - size, size))
 
     def _pretty_print_confusion_matrix(self, y_test, y_pred):
         unique_label = np.unique([y_test, y_pred])
@@ -65,15 +70,6 @@ class LogisticalRegression(Classification):
         data.model["log_pred"] = classifier.predict(data.model[x_features])
         self._logger.info("Actual Return Summary: {}".format(data.model.log_return_sign.value_counts()))
         self._logger.info("Logistical Regression Prediction Summary: {}".format(data.model.log_pred.value_counts()))
-
-    def train_test_split(self, data=None, features=None, size=None, test_param=None):
-        #default split to half the data set
-        if size is None:
-            size = 0.5
-        data.x_train, data.x_test, data.y_train, data.y_test = model_selection.train_test_split(data.model[features], test_param,
-                                                                            test_size=size, shuffle=False)
-         
-        self._logger.info("Finished test train data with split ratio: Training data {} Test data {} ".format(1 - size, size))
         
     def run_classifier(self, data):
         self._logger.info("Running Logisitical Regression Classifier for {}".format(data.filename))
@@ -151,7 +147,7 @@ class LogisticalRegression(Classification):
         
     def get_predicted_probabilities(self, data, x_features, classifier):
         data.pred_prob = classifier.predict_proba(data.model[x_features])
-        self._logger.info("Computed predicted probabilities as follows: {}".format(data.pred_prob))
+        self._logger.info("Computed predicted probabilities")
     
     def apply_gridsearch(self, data):
         self._params = {"C" : [100000, 10000, 1000, 100, 10, 1, .1, .001],
@@ -172,7 +168,7 @@ class LogisticalRegression(Classification):
         x_train_std = sc.fit_transform(x_train)
         #Apply the scaler to the test data
         x_test_std = sc.transform(x_test)
-         
+        
         for c in strengths:
             clf = linear_model.LogisticRegression(penalty='l1', C=c) #solver='liblinear'
             clf.fit(x_train, y_train)
