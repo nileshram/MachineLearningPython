@@ -178,10 +178,10 @@ class SupportVectorMachine(Classification):
         self._logger.info("Usable params in pipeline {}".format(self.svm_main.get_params().keys()))
     
     def _init_scaler_pipeline(self):
-        self._steps = [('scaler', StandardScaler()), ('LinearSVC', CalibratedClassifierCV(base_estimator=svm.LinearSVC(C = 1e5)))]
+        self._steps = [('scaler', StandardScaler()), ('SVC', svm.SVC(C=1, probability=True))]
 
     def _init_grid_search_params(self):
-        self._params = {"LinearSVC__base_estimator__C" : [100000, 10000, 1000, 100, 10, 1, .1, .001]}
+        self._params = {"SVC__C" : [1000, 100, 10, 1, .1, .001]}
         
     def fit_model(self, x_param, y_param, classifier):
         classifier.fit(x_param, y_param)

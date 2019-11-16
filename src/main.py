@@ -63,10 +63,10 @@ if __name__ == "__main__":
 #         estoxx_logit.run_classifier(estoxx_data)
 #         pl = PLBacktestingEngine()
 #         pl.run_backtest(data=dax_data, initial_capital=500000, bet_size=0.1, 
-#                         upper_bound=0.70, lower_bound=0.55)
+#                         upper_bound=0.90, lower_bound=0.75)
 #         pl.run_backtest(data=estoxx_data, initial_capital=500000, bet_size=0.1, 
-#                         upper_bound=0.70, lower_bound=0.55)
-#  
+#                         upper_bound=0.90, lower_bound=0.75)
+#   
 #         g = GraphLib()
 #         g.plot_multimodel_pl_backtest(dax_data, estoxx_data)
 #         g.plot_transition_probabilities_multi_model(dax_data, estoxx_data)
