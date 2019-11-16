@@ -54,8 +54,8 @@ class LogisticalRegression(Classification):
         self._init_classifier()
 
     def _init_classifier(self):
-        self.logreg_main = linear_model.LogisticRegression(penalty="l2", C = 1e6)
-        self.logreg_test = linear_model.LogisticRegression(penalty="l2", C = 1e6)
+        self.logreg_main = linear_model.LogisticRegression(penalty="l2", C = 100)
+        self.logreg_test = linear_model.LogisticRegression(penalty="l2", C = 100)
     
     def fit_model(self, x_param, y_param, classifier):
         classifier.fit(x_param, y_param)
@@ -90,7 +90,7 @@ class LogisticalRegression(Classification):
                                       y_result=returns_sign, classifier=self.logreg_test, size=0.25)
         
         #Perform optimal gridsearch for parameters here
-        self.apply_gridsearch(data)
+#         self.apply_gridsearch(data)
 #         
         self.get_predicted_probabilities(data, lagged_headers, self.logreg_main)
 #         
@@ -172,7 +172,7 @@ class LogisticalRegression(Classification):
         x_train_std = sc.fit_transform(x_train)
         #Apply the scaler to the test data
         x_test_std = sc.transform(x_test)
-        
+         
         for c in strengths:
             clf = linear_model.LogisticRegression(penalty='l1', C=c) #solver='liblinear'
             clf.fit(x_train, y_train)
