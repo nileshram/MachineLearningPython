@@ -8,6 +8,8 @@ from sklearn import linear_model, svm, model_selection
 from sklearn.metrics import confusion_matrix, roc_curve, roc_auc_score, classification_report
 from sklearn.preprocessing import StandardScaler
 from sklearn.grid_search import GridSearchCV
+from sklearn.calibration import CalibratedClassifierCV
+from sklearn.pipeline import Pipeline
 import logging
 import numpy as np
 import pandas as pd
@@ -37,9 +39,9 @@ class Classification(metaclass=ABCMeta):
         #default split to half the data set
         if size is None:
             size = 0.5
+        self._logger.info("Beginning test train split")
         data.x_train, data.x_test, data.y_train, data.y_test = model_selection.train_test_split(data.model[features], test_param,
                                                                             test_size=size, shuffle=False)
-         
         self._logger.info("Finished test train data with split ratio: Training data {} Test data {} ".format(1 - size, size))
 
     def compute_confusion_matrix_test_sample(self, data, classifier):
@@ -56,10 +58,6 @@ class Classification(metaclass=ABCMeta):
         data.fpr_test, data.tpr_test, data.thresholds_test = roc_curve(data.y_test, data.y_pred_test)
         data.roc_auc_score_test = roc_auc_score(data.y_test, data.y_pred_test)
         self._logger.info("ROC AUC Test Data Score: {}".format(data.roc_auc_score_test))
-
-    def compute_test_data_predicted_probabilities(self, data=None, classifier=None):
-        self._logger.info("Computing predicted probabilities on test set of data")
-        data.y_pred_prob_test = classifier.predict_proba(data.x_test)[:, 1]
 
     def _pretty_print_confusion_matrix(self, y_test, y_pred):
         unique_label = np.unique([y_test, y_pred])
@@ -89,14 +87,13 @@ class Classification(metaclass=ABCMeta):
         self.run_prediction(data, x_features, classifier)
         self.compute_confusion_matrix_main(data)
         self.compute_population_data_roc_metrics(data)
-        self.compute_population_data_predicted_probabilities(data=data, x_features=x_features, classifier=classifier)
+        self.get_predicted_probabilities(data=data, x_features=x_features, classifier=classifier)
 
     def _run_test_fit_classifier(self, data=None, x_features=None, y_result=None, classifier=None, size=None):
         self.train_test_split(data=data, features=x_features, size=size, test_param=y_result)
         self.fit_model(data.x_train, data.y_train, classifier)
         data.y_pred_test = classifier.predict(data.x_test)
         self.compute_test_data_roc_metrics(data=data)
-        self.compute_test_data_predicted_probabilities(data=data, classifier=classifier)
     
 class LogisticalRegression(Classification):
     
@@ -135,8 +132,6 @@ class LogisticalRegression(Classification):
                                       y_result=returns_sign, classifier=self.logreg_test, size=0.25)
         #Perform optimal gridsearch for parameters here
 #         self.apply_gridsearch(data=data, classifier=linear_model.LogisticRegression())
-#         
-        self.get_predicted_probabilities(data=data, x_features=lagged_headers, classifier=self.logreg_main)
         self._logger.info("Finished running through classifier")
 
     def compute_confusion_matrix_main(self, data):
@@ -151,10 +146,6 @@ class LogisticalRegression(Classification):
         data.fpr_main, data.tpr_main, data.thresholds_main = roc_curve(data.model.log_return_sign, data.model.log_pred)
         data.roc_auc_score_main = roc_auc_score(data.model.log_return_sign, data.model.log_pred)
         self._logger.info("ROC AUC Main Data Score: {}".format(data.roc_auc_score_main))
-
-    def compute_population_data_predicted_probabilities(self, data=None, x_features=None, classifier=None):
-        self._logger.info("Computing predicted probabilities on population data")
-        data.y_pred_prob_population = classifier.predict_proba(data.model[x_features])[:, 1]
         
     def test_regularisation_strengths(self, x_train, y_train, x_test, y_test):
         strengths = [100000, 10000, 1000, 100, 10, 1, .1, .001]
@@ -177,14 +168,20 @@ class SupportVectorMachine(Classification):
     
     def __init__(self):
         super(SupportVectorMachine, self).__init__()
+        self._init_scaler_pipeline()
         self._init_classifier()
+        self._init_grid_search_params()
 
     def _init_classifier(self):
-        self.svm_main = svm.SVC(C = 1e5, probability=True)
-        self.svm_test = svm.SVC(C = 1e5, probability=True)
+        self.svm_main = Pipeline(self._steps)
+        self.svm_test = Pipeline(self._steps)
+        self._logger.info("Usable params in pipeline {}".format(self.svm_main.get_params().keys()))
+    
+    def _init_scaler_pipeline(self):
+        self._steps = [('scaler', StandardScaler()), ('LinearSVC', CalibratedClassifierCV(base_estimator=svm.LinearSVC(C = 1e5)))]
 
     def _init_grid_search_params(self):
-        self._params = {"C" : [100000, 10000, 1000, 100, 10, 1, .1, .001]}
+        self._params = {"LinearSVC__base_estimator__C" : [100000, 10000, 1000, 100, 10, 1, .1, .001]}
         
     def fit_model(self, x_param, y_param, classifier):
         classifier.fit(x_param, y_param)
@@ -199,19 +196,16 @@ class SupportVectorMachine(Classification):
         self._logger.info("Running SVM Classifier for {}".format(data.filename))
         #Separate Data Parameters of x_features and y_response
         returns_sign = data.model.log_return_sign
-        x_features = [header for header in list(data.model) if "lagged" in header]
-        
+        #"moving_average", "momentum", "sample_sigma"
+        x_features = [header for header in list(data.model) for feat in ["lagged_return_1", "lagged_return_2", "moving_average", "momentum", "sample_sigma"] if feat in header]
         #Run main classifier
         self._run_main_classifier(data=data, x_features=x_features, 
                                   y_result=returns_sign, classifier=self.svm_main)
-        
         #Apply train test split on classifier
         self._run_test_fit_classifier(data=data, x_features=x_features, 
                                       y_result=returns_sign, classifier=self.svm_test, size=0.25)
-        
         #Perform optimal gridsearch for parameters here
-        self.apply_gridsearch(data=data)
-        self.get_predicted_probabilities(data=data, x_features=x_features, classifier=self.svm_main)
+        self.apply_gridsearch(data=data, classifier=self.svm_test)
         self._logger.info("Finished running through classifier")
         
     def compute_confusion_matrix_main(self, data):
@@ -226,12 +220,7 @@ class SupportVectorMachine(Classification):
         data.fpr_main, data.tpr_main, data.thresholds_main = roc_curve(data.model.log_return_sign, data.model.svm_pred)
         data.roc_auc_score_main = roc_auc_score(data.model.log_return_sign, data.model.svm_pred)
         self._logger.info("ROC AUC Main Data Score: {}".format(data.roc_auc_score_main))
-
-    def compute_population_data_predicted_probabilities(self, data, features, classifier):
-        self._logger.info("Computing predicted probabilities on population data")
-        data.y_pred_prob_population = classifier.predict_proba(data.model[features])[:, 1]
         
-    
 class ANN(Classification):
     
     def __init__(self):

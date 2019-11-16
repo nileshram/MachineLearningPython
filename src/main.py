@@ -66,7 +66,7 @@ if __name__ == "__main__":
 #                         upper_bound=0.70, lower_bound=0.55)
 #         pl.run_backtest(data=estoxx_data, initial_capital=500000, bet_size=0.1, 
 #                         upper_bound=0.70, lower_bound=0.55)
-
+#  
 #         g = GraphLib()
 #         g.plot_multimodel_pl_backtest(dax_data, estoxx_data)
 #         g.plot_transition_probabilities_multi_model(dax_data, estoxx_data)
