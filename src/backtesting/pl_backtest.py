@@ -17,28 +17,38 @@ class PLBacktestingEngine:
         self.pred_return_sign = list(data.model.log_pred)
         self.positive_return_prob = list(data.pred_prob[:, 1])
         self.negative_return_prob = list(data.pred_prob[:, 0])
+    
+    def _init_payload(self):
+        payload = {"pl_tracker" : [],
+                   "long_trades" : [],
+                    "short_trades" : []}
+        return payload
 
-    def _run(self, initial_capital=None, bet_size=None,
+    def _run(self, data=None, initial_capital=None, bet_size=None,
                             upper_bound=None, lower_bound=None):
-        pl_tracker = []
-        pl_tracker.append(initial_capital)
+        payload = self._init_payload()
+        payload["pl_tracker"].append(initial_capital)
         for x in range(len(self.actual_returns_sign)):
             if initial_capital >= 0:
                 if self.pred_return_sign[x] > 0:
                     if lower_bound < self.positive_return_prob[x] < upper_bound:
-                        pl = bet_size * initial_capital * self.log_return[x] 
+                        pl = bet_size * initial_capital * self.log_return[x]
+                        long_trade = (list(data.model.Date)[x], sum(payload["pl_tracker"]) + pl)
+                        payload["long_trades"].append(long_trade)
                     else:
                         pl = 0
                 elif self.pred_return_sign[x] < 0:
                     if lower_bound < self.negative_return_prob[x] < upper_bound:
-                        pl = bet_size * initial_capital * -self.log_return[x] 
+                        pl = bet_size * initial_capital * -self.log_return[x]
+                        short_trade = (list(data.model.Date)[x], sum(payload["pl_tracker"]) + pl)
+                        payload["short_trades"].append(short_trade)
                     else:
                         pl = 0
             else:
                 pl = 0
             initial_capital += pl
-            pl_tracker.append(pl)
-        return pl_tracker
+            payload["pl_tracker"].append(pl)
+        return payload
     
     def _pretty_print_trading_stats(self, data):
         self._logger.info("Asset name: {}".format(data.filename))
@@ -71,39 +81,17 @@ class PLBacktestingEngine:
                     running_streak = 0 #reset running streak
                     running_pl_accumulated = 0
         return max_streak, max_pl_accumulated
-    
-    def _get_long_trades(self, data=None, initial_capital=None,
-                            upper_bound=None, lower_bound=None):
-        trade_tracker = []
-        for x in range(len(self.actual_returns_sign)):
-            if initial_capital >= 0:
-                if self.pred_return_sign[x] > 0:
-                    if lower_bound < self.positive_return_prob[x] < upper_bound:
-                        long_trade = (list(data.model.Date)[x], list(data.pl_cumsum)[x+1])
-                        trade_tracker.append(long_trade)
-        return trade_tracker
-
-    def _get_short_trades(self, data=None, initial_capital=None,
-                            upper_bound=None, lower_bound=None):
-        trade_tracker = []
-        for x in range(len(self.actual_returns_sign)):
-            if initial_capital >= 0:
-                if self.pred_return_sign[x] < 0:
-                    if lower_bound < self.negative_return_prob[x] < upper_bound:
-                        short_trade = (list(data.model.Date)[x], list(data.pl_cumsum)[x+1])
-                        trade_tracker.append(short_trade)
-        return trade_tracker
             
     def run_backtest(self, data=None, initial_capital=None, bet_size=None, upper_bound=None, lower_bound=None):
         self._init_params(data)
-        pl_tracker = self._run(initial_capital=initial_capital, bet_size=bet_size, upper_bound=upper_bound,
+        self._logger.info("Running pl backtest for: {}".format(data.filename))
+        payload = self._run(data=data, initial_capital=initial_capital, bet_size=bet_size, upper_bound=upper_bound,
                                lower_bound=lower_bound)
-        setattr(data, "pl_tracker", pl_tracker)
-        setattr(data, "pl_cumsum", np.cumsum(pl_tracker))
-        setattr(data, "long_trade_marker", self._get_long_trades(data=data, initial_capital=initial_capital, 
-                                                                 upper_bound=upper_bound, lower_bound=lower_bound))
-        setattr(data, "short_trade_marker", self._get_short_trades(data=data, initial_capital=initial_capital, 
-                                                                 upper_bound=upper_bound, lower_bound=lower_bound))
+        self._logger.info("Completed running pl backtest for: {}".format(data.filename))
+        setattr(data, "pl_tracker", payload["pl_tracker"])
+        setattr(data, "pl_cumsum", np.cumsum(payload["pl_tracker"]))
+        setattr(data, "long_trade_marker", payload["long_trades"])
+        setattr(data, "short_trade_marker", payload["short_trades"])
         self._pretty_print_trading_stats(data=data)
         
     @staticmethod

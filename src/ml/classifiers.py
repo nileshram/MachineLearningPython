@@ -121,7 +121,6 @@ class LogisticalRegression(Classification):
         #pretty print confusion matrix with data labels
         c_matrix = self._pretty_print_confusion_matrix(data.y_test, y_pred_test)
         return c_matrix
-    
 
     def compute_confusion_matrix_main(self, data):
         self._logger.info("Computing Confusion matrix for main data as follows:")
@@ -153,7 +152,18 @@ class LogisticalRegression(Classification):
     def get_predicted_probabilities(self, data, x_features, classifier):
         data.pred_prob = classifier.predict_proba(data.model[x_features])
         self._logger.info("Computed predicted probabilities as follows: {}".format(data.pred_prob))
-        
+    
+    def apply_gridsearch(self, data):
+        self._params = {"C" : [100000, 10000, 1000, 100, 10, 1, .1, .001],
+                        "penalty" : ["l1", "l2"]}
+        self._grid = GridSearchCV(linear_model.LogisticRegression(),
+                                  self._params, verbose=3)
+        self._grid.fit(data.x_train, data.y_train)
+        self._logger.info("Best params to use for chosen classifier: {}".format(self._grid.best_params_))
+        grid_predictions = self._grid.predict(data.x_test)
+        self._logger.info("Confusion Matrix as Follows: {}".format(confusion_matrix(data.y_test, grid_predictions)))
+        self._logger.info("Classification Report: {}".format(classification_report(data.y_test, grid_predictions)))
+
     def test_regularisation_strengths(self, x_train, y_train, x_test, y_test):
         strengths = [100000, 10000, 1000, 100, 10, 1, .1, .001]
         #Create a scaler object
@@ -170,18 +180,6 @@ class LogisticalRegression(Classification):
             self._logger.info('Coefficient of each feature: {}'.format(clf.coef_))
             self._logger.info('Training accuracy: {}'.format(clf.score(x_train_std, y_train)))
             self._logger.info('Test accuracy: {}'.format(clf.score(x_test_std, y_test)))
-    
-    def apply_gridsearch(self, data):
-        self._params = {"C" : [100000, 10000, 1000, 100, 10, 1, .1, .001],
-                        "penalty" : ["l1", "l2"]}
-        self._grid = GridSearchCV(linear_model.LogisticRegression(),
-                                  self._params, verbose=3)
-        self._grid.fit(data.x_train, data.y_train)
-        self._logger.info("Best params to use for chosen classifier: {}".format(self._grid.best_params_))
-        grid_predictions = self._grid.predict(data.x_test)
-        self._logger.info("Confusion Matrix as Follows: {}".format(confusion_matrix(data.y_test, grid_predictions)))
-        self._logger.info("Classification Report: {}".format(classification_report(data.y_test, grid_predictions)))
-    
     
 class SupportVectorMachine(Classification):
     
