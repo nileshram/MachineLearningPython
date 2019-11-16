@@ -49,8 +49,8 @@ if __name__ == "__main__":
         estoxx_data = DataModel(filename="eurostoxx.csv")
         
         #Create Logistic Regression Classifier Here
-        dax_logit = LogisticalRegression()
-        estoxx_logit = LogisticalRegression()
+#         dax_logit = LogisticalRegression()
+#         estoxx_logit = LogisticalRegression()
         
         #Create SVM Classifier Here
         dax_svm = SupportVectorMachine()

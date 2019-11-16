@@ -4,6 +4,7 @@ Created on 9 Nov 2019
 @author: nilesh
 '''
 import numpy as np
+from math import sqrt
 
 class FeaturesEngineering:
     
@@ -25,11 +26,19 @@ class FeaturesEngineering:
         return df
     
     @staticmethod
-    def compute_momentum_indicator(df, period):
+    def compute_momentum_indicator(df, field=None, period=None):
         tag = "momentum_{}d".format(str(period))
-        df[tag] = df.Settle - df.Settle.shift(period)
+        df[tag] = df[field] - df[field].shift(period)
+        return df
+
+    @staticmethod
+    def compute_moving_average(df, field=None, period=None):
+        tag = "moving_average_{}d".format(str(period))
+        df[tag] = df[field].rolling(period).mean()
         return df
     
     @staticmethod
-    def compute_ewma(df):
-        pass
+    def compute_periodic_standard_deviation(df, field=None, period=None):
+        tag = "sample_sigma_{}".format(str(period))
+        df[tag] = df[field].rolling(period).std()
+        return df

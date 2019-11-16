@@ -39,6 +39,9 @@ class DataModel:
     def compute_model_features(self):
         FeaturesEngineering.compute_log_return(self.model)
         FeaturesEngineering.compute_lagged_returns(self.model, 5)
+        FeaturesEngineering.compute_periodic_standard_deviation(self.model, field="log_return", period=10)
+        FeaturesEngineering.compute_momentum_indicator(self.model, field="Settle",  period=5)
+        FeaturesEngineering.compute_moving_average(self.model, field="Settle", period=20)
         
     def _convert_to_datetime(self):
         self.model.Date = pd.to_datetime(self.model.Date, format='%d/%m/%Y')
