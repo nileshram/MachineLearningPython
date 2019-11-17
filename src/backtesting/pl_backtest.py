@@ -14,9 +14,15 @@ class PLBacktestingEngine:
     def _init_params(self, data):
         self.log_return = list(data.model.log_return)
         self.actual_returns_sign = list(data.model.log_return_sign)
-        self.pred_return_sign = list(data.model.log_pred)
+        self.pred_return_sign = self._get_prediction_(data)
         self.positive_return_prob = list(data.pred_prob[:, 1])
         self.negative_return_prob = list(data.pred_prob[:, 0])
+    
+    def _get_prediction_(self, data):
+        for header in list(data.model):
+            if "_pred" in header:
+                prediction = header
+        return list(data.model[prediction])
     
     def _init_payload(self):
         payload = {"pl_tracker" : [],
