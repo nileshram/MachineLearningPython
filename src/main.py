@@ -68,10 +68,10 @@ if __name__ == "__main__":
 #                         upper_bound=0.90, lower_bound=0.75)
 #   
         g = GraphLib()
-        g.plot_svm_2d_multimodel(dax_data, estoxx_data)
+#         g.plot_svm_2d_multimodel(dax_data, estoxx_data)
 #         g.plot_multimodel_pl_backtest(dax_data, estoxx_data)
 #         g.plot_transition_probabilities_multi_model(dax_data, estoxx_data)
-#         g.plot_multimodel_roc_curve(dax_data, estoxx_data)
+        g.plot_multimodel_roc_curve(dax_data, estoxx_data)
 #         g.plot_multimodel_confusion_matrix(dax_data, estoxx_data, ["Positive Returns", "Negative Returns"], 
 #                                            "Confusion Matrix - Logistic Regression")
     except Exception as e:

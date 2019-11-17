@@ -178,7 +178,7 @@ class SupportVectorMachine(Classification):
         self._logger.info("Usable params in pipeline {}".format(self.svm_main.get_params().keys()))
     
     def _init_scaler_pipeline(self):
-        self._steps = [('scaler', StandardScaler()), ('SVC', svm.SVC(C=1, probability=True))]
+        self._steps = [('scaler', StandardScaler()), ('SVC', svm.SVC(C=100, probability=True))]
 
     def _init_grid_search_params(self):
         self._params = {"SVC__C" : [1000, 100, 10, 1, .1, .001]}
