@@ -251,15 +251,20 @@ class GraphLib:
         ax1 = plt.gca()
         #Do calculation here
         # create grid to evaluate model
-        x=np.linspace(1000, 1000, 50)
-        y=np.linspace(1000 ,1000, 50)
+        x=np.linspace(max(data_1.visual_model_2D.momentum_5d), min(data_1.visual_model_2D.momentum_5d), 50)
+        y=np.linspace(max(data_1.visual_model_2D.lagged_return_1) , min(data_1.visual_model_2D.lagged_return_1), 50)
         Y,X=np.meshgrid(y,x)
-        xy=np.vstack([X.ravel(),Y.ravel()]).T
-        P=data_1.SVM_model_2D.decision_function(xy).reshape(X.shape)
+        
+        def plot_contours(ax1, clf, xx, yy, **params):
+            Z = clf.predict(np.c_[xx.ravel(), yy.ravel()])
+            Z = Z.reshape(xx.shape)
+            out = ax1.contourf(xx, yy, Z, **params)
+            return out
         # plot decision boundary and margins
-        ax1.contour(X,Y,P,colors='k',levels=[-1,0,1],alpha=0.5,linestyles=['--','-','--'], label="Decision Boundary")
+        plot_contours(ax1, data_1.SVM_model_2D, X, Y, cmap="coolwarm", alpha=0.8)
+#         ax1.contour(X,Y,P,colors='k',levels=[-1,0,1],alpha=0.5,linestyles=['--','-','--'], label="Decision Boundary")
         ax1.scatter(data_1.SVM_model_2D.support_vectors_[:,0],data_1.SVM_model_2D.support_vectors_[:,1],linewidth=1, label="Support Vectors")
-        ax1.scatter(data_1.visual_model_2D.momentum_5d, data_1.visual_model_2D.lagged_return_1, c=data_1.model.log_return_sign,cmap='autumn')
+        ax1.scatter(data_1.visual_model_2D.momentum_5d, data_1.visual_model_2D.lagged_return_1, c=data_1.model.log_return_sign,cmap='coolwarm')
         plt.title("Support Vector Visualisation - DAX")
         plt.xlabel("Momentum 5D")
         plt.ylabel("Lagged Return 1D")
@@ -267,21 +272,26 @@ class GraphLib:
         plt.minorticks_on()
         ax1.set_facecolor(color='whitesmoke')
         plt.grid(b=True, which='minor', color='#999999', linestyle='-', alpha=0.2)
-        plt.legend()
+#         plt.legend()
 
+        x=np.linspace(max(data_2.visual_model_2D.momentum_5d), min(data_2.visual_model_2D.momentum_5d), 100)
+        y=np.linspace(max(data_2.visual_model_2D.lagged_return_1) , min(data_2.visual_model_2D.lagged_return_1), 100)
+        Y,X=np.meshgrid(y,x)
+        xy=np.vstack([X.ravel(),Y.ravel()]).T
 
         plt.subplot(grid[0,1])
         ax2 = plt.gca()
         
-        x=np.linspace(1000, 1000, 50)
-        y=np.linspace(0.5 ,0.5, 50)
-        Y,X=np.meshgrid(y,x)
-        xy=np.vstack([X.ravel(),Y.ravel()]).T
-        P=data_1.SVM_model_2D.decision_function(xy).reshape(X.shape)
+#         x=np.linspace(1000, -1000, 50)
+#         y=np.linspace(0.5 ,-0.5, 50)
+#         Y,X=np.meshgrid(y,x)
+#         xy=np.vstack([X.ravel(),Y.ravel()]).T
         # plot decision boundary and margins
-        ax2.contour(X,Y,P,colors='k',levels=[-1,0,1],alpha=0.5,linestyles=['--','-','--'], label="Decision Boundary")
+        plot_contours(ax2, data_2.SVM_model_2D, X, Y, cmap="coolwarm", alpha=0.8)
+        # plot decision boundary and margins
+#         ax2.contour(X,Y,P,colors='k',levels=[-1,0,1],alpha=0.5,linestyles=['--','-','--'], label="Decision Boundary")
         ax2.scatter(data_2.SVM_model_2D.support_vectors_[:,0],data_2.SVM_model_2D.support_vectors_[:,1],linewidth=1, label="Support Vectors")
-        ax2.scatter(data_2.visual_model_2D.momentum_5d, data_2.visual_model_2D.lagged_return_1, c=data_2.model.log_return_sign, cmap='autumn')
+        ax2.scatter(data_2.visual_model_2D.momentum_5d, data_2.visual_model_2D.lagged_return_1, c=data_2.model.log_return_sign, cmap='coolwarm')
         
         plt.title("Support Vector Visualisation - ESTOXX")
         plt.xlabel("Momentum 5D")
@@ -290,7 +300,7 @@ class GraphLib:
         plt.minorticks_on()
         ax2.set_facecolor(color='whitesmoke')
         plt.grid(b=True, which='minor', color='#999999', linestyle='-', alpha=0.2)
-        plt.legend()
+#         plt.legend()
         #display plots
         plt.show()
         
