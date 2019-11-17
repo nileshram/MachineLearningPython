@@ -5,6 +5,7 @@ Created on 9 Nov 2019
 '''
 import numpy as np
 from math import sqrt
+from talib import RSI, MACD, STOCH
 
 class FeaturesEngineering:
     
@@ -39,6 +40,25 @@ class FeaturesEngineering:
     
     @staticmethod
     def compute_periodic_standard_deviation(df, field=None, period=None):
-        tag = "sample_sigma_{}".format(str(period))
+        tag = "sample_sigma_{}d".format(str(period))
         df[tag] = df[field].rolling(period).std()
         return df
+
+    @staticmethod
+    def compute_rsi(df, field=None, period=None):
+        tag = "RSI_{}d".format(str(period))
+        df[tag] = RSI(df[field].values, timeperiod=period) 
+        return df
+
+    @staticmethod
+    def compute_macd(df, field=None, fast_period=None, slow_period=None, signal_period=None):
+        df['macd'], df['macd_signal'], df['macd_hist'] = MACD(df[field].values, fastperiod=fast_period, slowperiod=slow_period, signalperiod=signal_period)
+        return df
+
+    @staticmethod
+    def compute_stochastic_k(df, slow_k_period=None, slow_d_period=None):
+        df['stoch_k'], df['stoch_d'] = STOCH(df.High.values, df.Low.values, df.Settle.values, slowk_period=slow_k_period, slowd_period=slow_d_period)
+        return df
+
+#instead of .values may have to use as_matrix() mathod
+    
