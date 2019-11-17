@@ -67,7 +67,8 @@ if __name__ == "__main__":
 #         pl.run_backtest(data=estoxx_data, initial_capital=500000, bet_size=0.1, 
 #                         upper_bound=0.90, lower_bound=0.75)
 #   
-#         g = GraphLib()
+        g = GraphLib()
+        g.plot_svm_2d_multimodel(dax_data, estoxx_data)
 #         g.plot_multimodel_pl_backtest(dax_data, estoxx_data)
 #         g.plot_transition_probabilities_multi_model(dax_data, estoxx_data)
 #         g.plot_multimodel_roc_curve(dax_data, estoxx_data)

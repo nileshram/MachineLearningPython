@@ -242,3 +242,56 @@ class GraphLib:
         #display plots
         plt.show()
     
+    def plot_svm_2d_multimodel(self, data_1, data_2):
+        #define gridspec here
+        grid = plt.GridSpec(1, 2, wspace=0.4, hspace=0.3)
+        #Add graphs to gridspec dynamically
+        plt.subplot(grid[0,0])
+        #Duplicate axes here
+        ax1 = plt.gca()
+        #Do calculation here
+        # create grid to evaluate model
+        x=np.linspace(1000, 1000, 50)
+        y=np.linspace(1000 ,1000, 50)
+        Y,X=np.meshgrid(y,x)
+        xy=np.vstack([X.ravel(),Y.ravel()]).T
+        P=data_1.SVM_model_2D.decision_function(xy).reshape(X.shape)
+        # plot decision boundary and margins
+        ax1.contour(X,Y,P,colors='k',levels=[-1,0,1],alpha=0.5,linestyles=['--','-','--'], label="Decision Boundary")
+        ax1.scatter(data_1.SVM_model_2D.support_vectors_[:,0],data_1.SVM_model_2D.support_vectors_[:,1],linewidth=1, label="Support Vectors")
+        ax1.scatter(data_1.visual_model_2D.momentum_5d, data_1.visual_model_2D.lagged_return_1, c=data_1.model.log_return_sign,cmap='autumn')
+        plt.title("Support Vector Visualisation - DAX")
+        plt.xlabel("Momentum 5D")
+        plt.ylabel("Lagged Return 1D")
+        #chart rendering
+        plt.minorticks_on()
+        ax1.set_facecolor(color='whitesmoke')
+        plt.grid(b=True, which='minor', color='#999999', linestyle='-', alpha=0.2)
+        plt.legend()
+
+
+        plt.subplot(grid[0,1])
+        ax2 = plt.gca()
+        
+        x=np.linspace(1000, 1000, 50)
+        y=np.linspace(0.5 ,0.5, 50)
+        Y,X=np.meshgrid(y,x)
+        xy=np.vstack([X.ravel(),Y.ravel()]).T
+        P=data_1.SVM_model_2D.decision_function(xy).reshape(X.shape)
+        # plot decision boundary and margins
+        ax2.contour(X,Y,P,colors='k',levels=[-1,0,1],alpha=0.5,linestyles=['--','-','--'], label="Decision Boundary")
+        ax2.scatter(data_2.SVM_model_2D.support_vectors_[:,0],data_2.SVM_model_2D.support_vectors_[:,1],linewidth=1, label="Support Vectors")
+        ax2.scatter(data_2.visual_model_2D.momentum_5d, data_2.visual_model_2D.lagged_return_1, c=data_2.model.log_return_sign, cmap='autumn')
+        
+        plt.title("Support Vector Visualisation - ESTOXX")
+        plt.xlabel("Momentum 5D")
+        plt.ylabel("Lagged Return 1D")
+        #chart rendering
+        plt.minorticks_on()
+        ax2.set_facecolor(color='whitesmoke')
+        plt.grid(b=True, which='minor', color='#999999', linestyle='-', alpha=0.2)
+        plt.legend()
+        #display plots
+        plt.show()
+        
+    

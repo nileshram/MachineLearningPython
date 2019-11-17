@@ -205,7 +205,9 @@ class SupportVectorMachine(Classification):
         self._run_test_fit_classifier(data=data, x_features=x_features, 
                                       y_result=returns_sign, classifier=self.svm_test, size=0.25)
         #Perform optimal gridsearch for parameters here
-        self.apply_gridsearch(data=data, classifier=self.svm_test)
+#         self.apply_gridsearch(data=data, classifier=self.svm_test)
+        #2D relationship model
+        self._run_2D_visualisation(data=data, y_target=returns_sign, data_filter=["momentum_5d", "lagged_return_1"])
         self._logger.info("Finished running through classifier")
         
     def compute_confusion_matrix_main(self, data):
@@ -220,6 +222,17 @@ class SupportVectorMachine(Classification):
         data.fpr_main, data.tpr_main, data.thresholds_main = roc_curve(data.model.log_return_sign, data.model.svm_pred)
         data.roc_auc_score_main = roc_auc_score(data.model.log_return_sign, data.model.svm_pred)
         self._logger.info("ROC AUC Main Data Score: {}".format(data.roc_auc_score_main))
+        
+    #define the 2D relationship here
+    def _run_2D_visualisation(self, data=None, y_target=None, data_filter=None):
+        filtered_model = data.model[data_filter]
+        svm_2d = svm.SVC(C=1, probability=True)
+        svm_2d.fit(filtered_model, y_target)
+        data.visual_model_2D = filtered_model
+        data.SVM_model_2D = svm_2d
+
+        
+            
         
 class ANN(Classification):
     
