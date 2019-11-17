@@ -178,7 +178,7 @@ class SupportVectorMachine(Classification):
         self._logger.info("Usable params in pipeline {}".format(self.svm_main.get_params().keys()))
     
     def _init_scaler_pipeline(self):
-        self._steps = [('scaler', StandardScaler()), ('SVC', svm.SVC(C=100, probability=True))]
+        self._steps = [('scaler', StandardScaler()), ('SVC', svm.SVC(C=0.1, probability=True))]
 
     def _init_grid_search_params(self):
         self._params = {"SVC__C" : [1000, 100, 10, 1, .1, .001]}
@@ -205,7 +205,7 @@ class SupportVectorMachine(Classification):
         self._run_test_fit_classifier(data=data, x_features=x_features, 
                                       y_result=returns_sign, classifier=self.svm_test, size=0.25)
         #Perform optimal gridsearch for parameters here
-#         self.apply_gridsearch(data=data, classifier=self.svm_test)
+        self.apply_gridsearch(data=data, classifier=self.svm_test)
         #2D relationship model
         self._run_2D_visualisation(data=data, y_target=returns_sign, data_filter=["momentum_5d", "lagged_return_1"])
         self._logger.info("Finished running through classifier")
