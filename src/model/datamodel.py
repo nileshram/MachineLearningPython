@@ -22,14 +22,14 @@ class DataManager:
     
 class DataModel:
     
-    def __init__(self, filename=None, extended_features=False):
+    def __init__(self, filename=None, extended_features=None):
         if filename is None:
             self.filename = "dax.csv"
         else:
             self.filename = filename
         self.model = DataManager.load_data("data", self.filename)
         self._convert_to_datetime()
-        self.compute_model_features(extended_features=False)
+        self.compute_model_features(extended_features=extended_features)
         self._clean_datamodel()
         
     def _clean_datamodel(self):
@@ -37,7 +37,7 @@ class DataModel:
         self.model.sort_values(by='Date')
     
     def compute_model_features(self, extended_features=None):
-        if extended_features:
+        if extended_features is False:
             FeaturesEngineering.compute_log_return(self.model)
             FeaturesEngineering.compute_lagged_returns(self.model, 5)
             FeaturesEngineering.compute_periodic_standard_deviation(self.model, field="log_return", period=10)

@@ -47,17 +47,17 @@ class FeaturesEngineering:
     @staticmethod
     def compute_rsi(df, field=None, period=None):
         tag = "RSI_{}d".format(str(period))
-        df[tag] = RSI(df[field].values, timeperiod=period) 
+        df[tag] = RSI(df[field].values.astype(float), timeperiod=period) 
         return df
 
     @staticmethod
     def compute_macd(df, field=None, fast_period=None, slow_period=None, signal_period=None):
-        df['macd'], df['macd_signal'], df['macd_hist'] = MACD(df[field].values, fastperiod=fast_period, slowperiod=slow_period, signalperiod=signal_period)
+        df['macd'], df['macd_signal'], df['macd_hist'] = MACD(df[field].values.astype(float), fastperiod=fast_period, slowperiod=slow_period, signalperiod=signal_period)
         return df
 
     @staticmethod
     def compute_stochastic_k(df, slow_k_period=None, slow_d_period=None):
-        df['stoch_k'], df['stoch_d'] = STOCH(df.High.values, df.Low.values, df.Settle.values, slowk_period=slow_k_period, slowd_period=slow_d_period)
+        df['stoch_k'], df['stoch_d'] = STOCH(df.High.values.astype(float), df.Low.values.astype(float), df.Settle.values.astype(float), slowk_period=float(slow_k_period), slowd_period=float(slow_d_period))
         return df
 
 #instead of .values may have to use as_matrix() mathod

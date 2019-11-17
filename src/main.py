@@ -46,7 +46,7 @@ if __name__ == "__main__":
     try:
         #Create datamodel here
         dax_data = DataModel(filename="dax.csv", extended_features=True)
-        estoxx_data = DataModel(filename="eurostoxx.csv", extended_features=False)
+        estoxx_data = DataModel(filename="eurostoxx.csv", extended_features=True)
         
         #Create Logistic Regression Classifier Here
 #         dax_logit = LogisticalRegression()
@@ -69,7 +69,7 @@ if __name__ == "__main__":
 #   
         g = GraphLib()
 #         g.plot_svm_2d_multimodel(dax_data, estoxx_data)
-        g.plot_multimodel_pl_backtest(dax_data, estoxx_data)
+#         g.plot_multimodel_pl_backtest(dax_data, estoxx_data)
 #         g.plot_transition_probabilities_multi_model(dax_data, estoxx_data)
 #         g.plot_multimodel_roc_curve(dax_data, estoxx_data)
 #         g.plot_multimodel_confusion_matrix(dax_data, estoxx_data, ["Positive Returns", "Negative Returns"], 
