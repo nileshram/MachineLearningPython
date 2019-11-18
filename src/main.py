@@ -51,21 +51,23 @@ if __name__ == "__main__":
         #Create Logistic Regression Classifier Here
 #         dax_logit = LogisticalRegression()
 #         estoxx_logit = LogisticalRegression()
-        
         #Create SVM Classifier Here
-        dax_svm = SupportVectorMachine()
-        estoxx_svm = SupportVectorMachine()
+#         dax_svm = SupportVectorMachine()
+#         estoxx_svm = SupportVectorMachine()
+        #Create RNN Classifier here
+        ann = ANN()
+        ann.run_classifier(dax_data)
         
         #Run classifier
-        dax_svm.run_classifier(dax_data)
-        estoxx_svm.run_classifier(estoxx_data)
+#         dax_svm.run_classifier(dax_data)
+#         estoxx_svm.run_classifier(estoxx_data)
 #         dax_logit.run_classifier(dax_data)
 #         estoxx_logit.run_classifier(estoxx_data)
-        pl = PLBacktestingEngine()
-        pl.run_backtest(data=dax_data, initial_capital=500000, bet_size=0.40, 
-                        upper_bound=0.95, lower_bound=0.90)
-        pl.run_backtest(data=estoxx_data, initial_capital=500000, bet_size=0.40, 
-                        upper_bound=0.95, lower_bound=0.90)
+#         pl = PLBacktestingEngine()
+#         pl.run_backtest(data=dax_data, initial_capital=500000, bet_size=0.40, 
+#                         upper_bound=0.95, lower_bound=0.90)
+#         pl.run_backtest(data=estoxx_data, initial_capital=500000, bet_size=0.40, 
+#                         upper_bound=0.95, lower_bound=0.90)
 #   
         g = GraphLib()
 #         g.plot_svm_2d_multimodel(dax_data, estoxx_data)

@@ -6,9 +6,10 @@ Created on 9 Nov 2019
 from abc import abstractmethod, ABCMeta
 from sklearn import linear_model, svm, model_selection
 from sklearn.metrics import confusion_matrix, roc_curve, roc_auc_score, classification_report
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.grid_search import GridSearchCV
-from sklearn.calibration import CalibratedClassifierCV
+from tensorflow.keras import Sequential
+from tensorflow.keras.layers import Dense, LSTM, Dropout
 from sklearn.pipeline import Pipeline
 import logging
 import numpy as np
@@ -235,7 +236,65 @@ class ANN(Classification):
     
     def __init__(self):
         super(ANN, self).__init__()
+        self._init_classifier()
+    
+    def _init_classifier(self):
+        self._regressor = Sequential()
+        
+    def run_classifier(self, data=None):
+        #Initialise features and y_response here 
+        x_features = [header for header in list(data.model) for feat in ["lagged_return_1", "lagged_return_2", "moving_average", "momentum", "sample_sigma"] if feat in header]
+        y_response = list(np.where(data.model.log_return_sign.values == -1, 0, 1))
+        #Run scaling of parameters
+        self._apply_data_scaling(data=data, features=x_features)
+        #Prepare data set
+        self._prepare_dataset(data=data, y_target=y_response, time_steps=60)
+        #Run LSTM
+        self._init_LSTM(data=data)
+        
+    def _apply_data_scaling(self, data=None, features=None):
+        #apply scaling to test and training data
+        scaler = MinMaxScaler(feature_range=(0, 1))
+        self._logger.info("Applying MinMaxScaler to training and test data")
+        data.scaled_data = scaler.fit_transform(data.model[features])
+
+    
+    def fit_model(self):
         pass
     
-    def run_classifier(self):
+    def _init_LSTM(self, data=None):
+        self._logger.info("Adding LTSM to regressor")
+        self._regressor.add(LSTM(units=50, activation='relu', return_sequences=True, input_shape=(data.x_train.shape[1], data.x_train.shape[2])))
+        self._regressor.add(Dropout(0.2))
+        self._regressor.add(LSTM(units=60, activation='relu', return_sequences=True))
+        self._regressor.add(Dropout(0.3))
+        self._regressor.add(LSTM(units=80, activation='relu', return_sequences=True))
+        self._regressor.add(Dropout(0.4))
+        self._regressor.add(LSTM(units=120, activation='relu', return_sequences=True))
+        self._regressor.add(Dropout(0.5))
+        #this is the output layer
+        self._regressor.add(Dense(units=1))
+        
+        self._logger.info("TensorFlow Summary\n {}".format(self._regressor.summary()))
+        #run regressor
+        self._regressor.compile(optimizer='adam', loss="mean_squared_error")
+        self._regressor.fit(data.x_train, data.y_train, epochs=10, batch_size=32)
+    
+    def _prepare_dataset(self, data=None, y_target=None, time_steps=None):
+        x_train = []
+        y_train = []
+        for t in range(time_steps, len(data.model)):
+            x_train.append(data.scaled_data[t-time_steps:t])
+            y_train.append(y_target[t])
+        x_train, y_train = np.array(x_train), np.array(y_train)
+        data.x_train = x_train
+        data.y_train = y_train
+    
+    def _prepare_test_dataset(self, data=None, y_target=None):
         pass
+        
+    def run_prediction(self):
+        pass
+        
+
+    
