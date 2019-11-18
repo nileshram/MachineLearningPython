@@ -30,11 +30,17 @@ class DataModel:
         self.model = DataManager.load_data("data", self.filename)
         self._convert_to_datetime()
         self.compute_model_features(extended_features=extended_features)
+        self._apply_features_shift()
         self._clean_datamodel()
         
     def _clean_datamodel(self):
         self.model.dropna(inplace=True)
         self.model.sort_values(by='Date')
+        
+    def _apply_features_shift(self):
+        self.model.sample_sigma_10d = self.model.sample_sigma_10d.shift()
+        self.model.moving_average_20d = self.model.moving_average_20d.shift()
+        self.model.momentum_5d = self.model.momentum_5d.shift()
     
     def compute_model_features(self, extended_features=None):
         if extended_features is False:

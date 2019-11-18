@@ -60,5 +60,11 @@ class FeaturesEngineering:
         df['stoch_k'], df['stoch_d'] = STOCH(df.High.values.astype(float), df.Low.values.astype(float), df.Settle.values.astype(float), slowk_period=float(slow_k_period), slowd_period=float(slow_d_period))
         return df
 
+    @staticmethod
+    def apply_shift_to_field(df, field=None, shift_size=None):
+        tag = "{}_{}".format(field, shift_size)
+        df[tag] = df[field].shift(shift_size)
+        return df
+
 #instead of .values may have to use as_matrix() mathod
     

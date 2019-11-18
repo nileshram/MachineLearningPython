@@ -179,7 +179,7 @@ class SupportVectorMachine(Classification):
         self._logger.info("Usable params in pipeline {}".format(self.svm_main.get_params().keys()))
     
     def _init_scaler_pipeline(self):
-        self._steps = [('scaler', StandardScaler()), ('SVC', svm.SVC(C=1, probability=True))]
+        self._steps = [('scaler', StandardScaler()), ('SVC', svm.SVC(C=10, probability=True))]
 
     def _init_grid_search_params(self):
         self._params = {"SVC__C" : [1000, 100, 10, 1, .1, .001]}
@@ -227,7 +227,7 @@ class SupportVectorMachine(Classification):
     #define the 2D relationship here
     def _run_2D_visualisation(self, data=None, y_target=None, data_filter=None):
         filtered_model = data.model[data_filter]
-        svm_2d = svm.SVC(C=100, probability=True)
+        svm_2d = svm.SVC(C=1000, probability=True)
         svm_2d.fit(filtered_model, y_target)
         data.visual_model_2D = filtered_model
         data.SVM_model_2D = svm_2d
