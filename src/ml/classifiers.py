@@ -26,7 +26,7 @@ class Classification(metaclass=ABCMeta):
     
     @abstractmethod
     def fit_model(self, x_param, y_param):
-        pass
+        raise NotImplementedError("Should implement fit_model()")
         
     @abstractmethod
     def run_classifier(self):
@@ -245,19 +245,42 @@ class ANN(Classification):
         #Initialise features and y_response here 
         x_features = [header for header in list(data.model) for feat in ["lagged_return_1", "lagged_return_2", "moving_average", "momentum", "sample_sigma"] if feat in header]
         y_response = list(np.where(data.model.log_return_sign.values == -1, 0, 1))
+        #Apply test train split here by date
+        self._test_train_split(data=data, date_filter="2019-01-01")
         #Run scaling of parameters
         self._apply_data_scaling(data=data, features=x_features)
         #Prepare data set
         self._prepare_dataset(data=data, y_target=y_response, time_steps=60)
         #Run LSTM
         self._init_LSTM(data=data)
+    
+    def _test_train_split(self, data=None, date_filter=None):
+        #Apply date filter to data model
+        self._logger.info("Applying date filter range to datamodel for test train split")
+        data.train_dataframe = data.model[data.model.Date < date_filter]
+        data.test_dataframe = data.model[data.model.Date >= date_filter]
+        data.train_target = data.train_dataframe.log_return_sign
+        data.test_target = data.test_dataframe.log_return_sign
         
-    def _apply_data_scaling(self, data=None, features=None):
+    def _apply_data_scaling(self, data=None, features=None, y_target=None):
+        self._logger.info("Applying scaling to train and test target")
+        data.scaled_train_target = list(np.where(data.train_target.values == -1, 0, 1))
+        data.scaled_test_target = list(np.where(data.test_target.values == -1, 0, 1))
         #apply scaling to test and training data
         scaler = MinMaxScaler(feature_range=(0, 1))
         self._logger.info("Applying MinMaxScaler to training and test data")
-        data.scaled_data = scaler.fit_transform(data.model[features])
+        data.scaled_train_data = scaler.fit_transform(data.train_dataframe[features])
+        data.scaled_test_data = scaler.transorm(data.test_dataframe[features])
 
+    def _prepare_train_dataset(self, data=None, y_target=None, time_steps=None):
+        x_train = []
+        y_train = []
+        for t in range(time_steps, len(data.scaled_train_data)):
+            x_train.append(data.scaled_train_data[t-time_steps:t])
+            y_train.append(data.scaled_train_target[t])
+        x_train, y_train = np.array(x_train), np.array(y_train)
+        data.x_train = x_train
+        data.y_train = y_train
     
     def fit_model(self):
         pass
@@ -279,16 +302,6 @@ class ANN(Classification):
         #run regressor
         self._regressor.compile(optimizer='adam', loss="mean_squared_error")
         self._regressor.fit(data.x_train, data.y_train, epochs=10, batch_size=32)
-    
-    def _prepare_dataset(self, data=None, y_target=None, time_steps=None):
-        x_train = []
-        y_train = []
-        for t in range(time_steps, len(data.model)):
-            x_train.append(data.scaled_data[t-time_steps:t])
-            y_train.append(y_target[t])
-        x_train, y_train = np.array(x_train), np.array(y_train)
-        data.x_train = x_train
-        data.y_train = y_train
     
     def _prepare_test_dataset(self, data=None, y_target=None):
         pass
