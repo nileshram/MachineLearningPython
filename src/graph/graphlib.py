@@ -155,9 +155,6 @@ class GraphLib:
         plt.legend()
         #display plots
         plt.show()
-        
-    def plot_pl_backtest(self, data_1, data_2):
-        pass
     
     def plot_transition_probabilities_multi_model(self, data_1, data_2):
         #define gridspec here

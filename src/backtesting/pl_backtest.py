@@ -104,7 +104,7 @@ class PLBacktestingEngine:
     def compute_transitional_probabilities(data):
         #prepare data here:
         actual_returns_sign = list(data.model.log_return_sign)
-        pred_return_sign = list(data.model.log_pred)
+        pred_return_sign = list(data.model.svm_pred)
         positive_return_prob = list(data.pred_prob[:, 1])
         negative_return_prob = list(data.pred_prob[:, 0])
         correct_prob = []
