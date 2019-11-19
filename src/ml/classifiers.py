@@ -237,9 +237,14 @@ class ANN(Classification):
     def __init__(self):
         super(ANN, self).__init__()
         self._init_classifier()
+        self._init_scaler()
     
     def _init_classifier(self):
         self._regressor = Sequential()
+    
+    def _init_scaler(self):
+        self._scaler = MinMaxScaler(feature_range=(0,1))
+        self._scaler_target = MinMaxScaler(feature_range=(0,1))
         
     def run_classifier(self, data=None):
         #Initialise features and y_response here 
@@ -248,9 +253,13 @@ class ANN(Classification):
         #Apply test train split here by date
         self._test_train_split(data=data, date_filter="2019-01-01")
         #Run scaling of parameters
-        self._apply_data_scaling(data=data, features=x_features)
+        self._apply_train_data_scaling(data=data, features=x_features)
         #Prepare data set
-        self._prepare_dataset(data=data, y_target=y_response, time_steps=60)
+        self._prepare_train_dataset(data=data, time_steps=60)
+        #Run scaling of parameters for test dataset
+        self._apply_test_data_scaling(data=data, features=x_features)
+        #Apply scaling of test data set
+        self._prepare_test_dataset(data=data, time_steps=60)
         #Run LSTM
         self._init_LSTM(data=data)
     
@@ -260,19 +269,20 @@ class ANN(Classification):
         data.train_dataframe = data.model[data.model.Date < date_filter]
         data.test_dataframe = data.model[data.model.Date >= date_filter]
         data.train_target = data.train_dataframe.log_return_sign
-        data.test_target = data.test_dataframe.log_return_sign
         
-    def _apply_data_scaling(self, data=None, features=None, y_target=None):
-        self._logger.info("Applying scaling to train and test target")
+    def _apply_train_data_scaling(self, data=None, features=None):
+        self._logger.info("Applying scaling to train data")
         data.scaled_train_target = list(np.where(data.train_target.values == -1, 0, 1))
-        data.scaled_test_target = list(np.where(data.test_target.values == -1, 0, 1))
-        #apply scaling to test and training data
-        scaler = MinMaxScaler(feature_range=(0, 1))
-        self._logger.info("Applying MinMaxScaler to training and test data")
-        data.scaled_train_data = scaler.fit_transform(data.train_dataframe[features])
-        data.scaled_test_data = scaler.transorm(data.test_dataframe[features])
-
-    def _prepare_train_dataset(self, data=None, y_target=None, time_steps=None):
+        self._logger.info("Applying MinMaxScaler() to training data")
+        data.scaled_train_data = self._scaler.fit_transform(data.train_dataframe[features])
+    
+    def _apply_test_data_scaling(self, data=None, features=None):
+        self._logger.info("Applying scaling to test data")
+        data.scaled_test_target = list(np.where(data.test_dataframe.log_return_sign.values == -1, 0, 1))
+        self._logger.info("Applying MinMaxScaler() to test data")
+        data.scaled_test_data = self._scaler.transform(data.test_dataframe[features])
+        
+    def _prepare_train_dataset(self, data=None, time_steps=None):
         x_train = []
         y_train = []
         for t in range(time_steps, len(data.scaled_train_data)):
@@ -281,19 +291,33 @@ class ANN(Classification):
         x_train, y_train = np.array(x_train), np.array(y_train)
         data.x_train = x_train
         data.y_train = y_train
+        #prepare test set here
+        data.previous_timestep_data = data.train_dataframe.tail(time_steps)
+        #we now append this previous data onto the test set
+        data.test_dataframe = data.previous_timestep_data.append(data.test_dataframe, ignore_index=True)
+
+    def _prepare_test_dataset(self, data=None, time_steps=None):
+        x_test = []
+        y_test = []
+        for t in range(time_steps, len(data.scaled_test_data)):
+            x_test.append(data.scaled_test_data[t-time_steps:t])
+            y_test.append(data.scaled_test_target[t])
+        x_test, y_test = np.array(x_test), np.array(y_test)
+        data.x_test = x_test
+        data.y_test = y_test
     
     def fit_model(self):
         pass
     
     def _init_LSTM(self, data=None):
         self._logger.info("Adding LTSM to regressor")
-        self._regressor.add(LSTM(units=50, activation='relu', return_sequences=True, input_shape=(data.x_train.shape[1], data.x_train.shape[2])))
+        self._regressor.add(LSTM(units=60, activation='relu', return_sequences=True, input_shape=(data.x_train.shape[1], data.x_train.shape[2])))
         self._regressor.add(Dropout(0.2))
         self._regressor.add(LSTM(units=60, activation='relu', return_sequences=True))
         self._regressor.add(Dropout(0.3))
         self._regressor.add(LSTM(units=80, activation='relu', return_sequences=True))
         self._regressor.add(Dropout(0.4))
-        self._regressor.add(LSTM(units=120, activation='relu', return_sequences=True))
+        self._regressor.add(LSTM(units=120, activation='relu'))
         self._regressor.add(Dropout(0.5))
         #this is the output layer
         self._regressor.add(Dense(units=1))
@@ -302,9 +326,10 @@ class ANN(Classification):
         #run regressor
         self._regressor.compile(optimizer='adam', loss="mean_squared_error")
         self._regressor.fit(data.x_train, data.y_train, epochs=10, batch_size=32)
-    
-    def _prepare_test_dataset(self, data=None, y_target=None):
-        pass
+        
+        data.y_pred = self._regressor.predict(data.x_test)
+        
+        self._logger.info("Finished running LSTM regressor")
         
     def run_prediction(self):
         pass
