@@ -248,10 +248,9 @@ class ANN(Classification):
         
     def run_classifier(self, data=None):
         #Initialise features and y_response here 
-        x_features = [header for header in list(data.model) for feat in ["lagged_return_1", "lagged_return_2", "moving_average", "momentum", "sample_sigma"] if feat in header]
-        y_response = list(np.where(data.model.log_return_sign.values == -1, 0, 1))
+        x_features = ["sample_sigma_10d", "moving_average_20d", "momentum_5d", "RSI_14d", "stoch_k", "macd"]
         #Apply test train split here by date
-        self._test_train_split(data=data, date_filter="2019-01-01")
+        self._test_train_split(data=data, date_filter="2018-01-01")
         #Run scaling of parameters
         self._apply_train_data_scaling(data=data, features=x_features)
         #Prepare data set
@@ -272,13 +271,15 @@ class ANN(Classification):
         
     def _apply_train_data_scaling(self, data=None, features=None):
         self._logger.info("Applying scaling to train data")
-        data.scaled_train_target = list(np.where(data.train_target.values == -1, 0, 1))
+        data.scaled_train_target = self._scaler_target.fit_transform(data.train_target.values.reshape(-1, 1))
+#         data.scaled_train_target = list(np.where(data.train_target.values == -1, 0, 1))
         self._logger.info("Applying MinMaxScaler() to training data")
         data.scaled_train_data = self._scaler.fit_transform(data.train_dataframe[features])
     
     def _apply_test_data_scaling(self, data=None, features=None):
         self._logger.info("Applying scaling to test data")
-        data.scaled_test_target = list(np.where(data.test_dataframe.log_return_sign.values == -1, 0, 1))
+        data.scaled_test_target = self._scaler_target.fit_transform(data.test_dataframe.log_return_sign.values.reshape(-1,1))
+#         data.scaled_test_target = list(np.where(data.test_dataframe.log_return_sign.values == -1, 0, 1))
         self._logger.info("Applying MinMaxScaler() to test data")
         data.scaled_test_data = self._scaler.transform(data.test_dataframe[features])
         
@@ -320,15 +321,17 @@ class ANN(Classification):
         self._regressor.add(LSTM(units=120, activation='relu'))
         self._regressor.add(Dropout(0.5))
         #this is the output layer
-        self._regressor.add(Dense(units=1))
+        self._regressor.add(Dense(units=1, activation='sigmoid'))
         
         self._logger.info("TensorFlow Summary\n {}".format(self._regressor.summary()))
         #run regressor
-        self._regressor.compile(optimizer='adam', loss="mean_squared_error")
+        self._regressor.compile(optimizer='adam', loss="binary_crossentropy", metrics=['accuracy']) #mae loss
         self._regressor.fit(data.x_train, data.y_train, epochs=10, batch_size=32)
         
-        data.y_pred = self._regressor.predict(data.x_test)
-        
+        data.y_pred_scaled = self._regressor.predict(data.x_test)
+        data.y_pred = self._scaler_target.inverse_transform(data.y_pred_scaled)
+        scores = self._regressor.evaluate(data.x_test, data.y_test, verbose=0)
+        self._logger.info("Accuracy score : {}".format(scores * 100))
         self._logger.info("Finished running LSTM regressor")
         
     def run_prediction(self):

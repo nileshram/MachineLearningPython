@@ -37,11 +37,20 @@ class DataModel:
         self.model.dropna(inplace=True)
         self.model.sort_values(by='Date')
         
-    def _apply_features_shift(self):
-        self.model.sample_sigma_10d = self.model.sample_sigma_10d.shift()
-        self.model.moving_average_20d = self.model.moving_average_20d.shift()
-        self.model.momentum_5d = self.model.momentum_5d.shift()
-    
+    def _apply_features_shift(self, extended_features=None):
+        if extended_features is False:
+            self.model.sample_sigma_10d = self.model.sample_sigma_10d.shift()
+            self.model.moving_average_20d = self.model.moving_average_20d.shift()
+            self.model.momentum_5d = self.model.momentum_5d.shift()
+        else:
+        #shift new features
+            self.model.sample_sigma_10d = self.model.sample_sigma_10d.shift()
+            self.model.moving_average_20d = self.model.moving_average_20d.shift()
+            self.model.momentum_5d = self.model.momentum_5d.shift()
+            self.model.RSI_14d = self.model.RSI_14d.shift()
+            self.model.stoch_k = self.model.stoch_k.shift()
+            self.model.macd = self.model.macd.shift()
+            
     def compute_model_features(self, extended_features=None):
         if extended_features is False:
             FeaturesEngineering.compute_log_return(self.model)

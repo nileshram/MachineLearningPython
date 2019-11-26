@@ -45,8 +45,8 @@ if __name__ == "__main__":
     log.info("Initialising Program For CQF Exam 3 Machine Learning with Python")
     try:
         #Create datamodel here
-        dax_data = DataModel(filename="dax.csv", extended_features=False)
-        estoxx_data = DataModel(filename="eurostoxx.csv", extended_features=False)
+        dax_data = DataModel(filename="dax.csv", extended_features=True)
+        estoxx_data = DataModel(filename="eurostoxx.csv", extended_features=True)
         
         #Create Logistic Regression Classifier Here
 #         dax_logit = LogisticalRegression()
