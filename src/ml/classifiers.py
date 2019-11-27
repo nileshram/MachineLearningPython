@@ -20,6 +20,7 @@ class Classification(metaclass=ABCMeta):
     
     def __init__(self):
         self._logger = logging.getLogger("cqf_logger")
+        self._logger.propagate = False
     
     @abstractmethod
     def _init_classifier(self):
@@ -250,6 +251,7 @@ class ANN(Classification):
     def run_classifier(self, data=None):
         #Initialise features and y_response here 
         x_features = ["sample_sigma_10d", "moving_average_20d", "momentum_5d", "RSI_14d", "stoch_k", "macd"]
+#         x_features = ["sample_sigma_10d", "moving_average_20d", "momentum_5d", "RSI_14d", "stoch_k", "macd"]
         #Apply test train split here by date
         self._test_train_split(data=data, date_filter="2018-01-01")
         #Run scaling of parameters
@@ -332,13 +334,135 @@ class ANN(Classification):
         self._logger.info("TensorFlow Summary\n {}".format(self._regressor.summary()))
         #run regressor
         self._regressor.compile(optimizer='adam', loss="binary_crossentropy", metrics=['accuracy']) #mae loss
-        self._regressor.fit(data.x_train, data.y_train, epochs=1, batch_size=32) #binary_crossentropy
+        self._regressor.fit(data.x_train, data.y_train, epochs=10, batch_size=100) #binary_crossentropy
         
         data.y_pred_scaled = self._regressor.predict(data.x_test)
         data.y_pred = self._scaler_target.inverse_transform(data.y_pred_scaled)
-        scores = self._regressor.evaluate(data.x_test, data.y_test, verbose=0)
-        self._logger.info("Accuracy score : {}".format(scores * 100))
+#         scores = self._regressor.evaluate(data.x_test, data.y_test, verbose=0)
+#         self._logger.info("Accuracy score : {}".format(scores * 100))
         self._logger.info("Finished running LSTM regressor")
+        
+    def run_prediction(self):
+        pass
+
+class ANN2(Classification):
+    
+    def __init__(self):
+        super(ANN2, self).__init__()
+        self._init_classifier()
+        self._init_scaler()
+    
+    def _init_classifier(self):
+        self._regressor = Sequential()
+    
+    def _init_scaler(self):
+        self._scaler = MinMaxScaler(feature_range=(0,1))
+        self._scaler_target = MinMaxScaler(feature_range=(0,1))
+        
+    def run_classifier(self, data=None):
+        #Initialise features and y_response here 
+        x_features = ["Open", "High", "Low", "Settle", "sample_sigma_10d", "moving_average_20d", "momentum_5d", "RSI_14d", "stoch_k", "macd"]
+#         x_features = ["sample_sigma_10d", "moving_average_20d", "momentum_5d", "RSI_14d", "stoch_k", "macd"]
+        #Apply test train split here by date
+        self._test_train_split(data=data, date_filter="2018-01-01")
+        #Run scaling of parameters
+        self._apply_train_data_scaling(data=data, features=x_features)
+        #Prepare data set
+        self._prepare_train_dataset(data=data, time_steps=60)
+        #Run scaling of parameters for test dataset
+        self._apply_test_data_scaling(data=data, features=x_features)
+        #Apply scaling of test data set
+        self._prepare_test_dataset(data=data, time_steps=60)
+        #Run LSTM
+        self._init_LSTM(data=data)
+    
+    def _test_train_split(self, data=None, date_filter=None):
+        #Apply date filter to data model
+        self._logger.info("Applying date filter range to datamodel for test train split")
+        data.train_dataframe = data.model[data.model.Date < date_filter]
+        data.test_dataframe = data.model[data.model.Date >= date_filter]
+        data.train_target = data.train_dataframe.Open
+        
+    def _apply_train_data_scaling(self, data=None, features=None):
+        self._logger.info("Applying scaling to train data")
+        data.scaled_train_target = self._scaler_target.fit_transform(data.train_target.values.reshape(-1, 1))
+#         data.scaled_train_target = list(np.where(data.train_target.values == -1, 0, 1))
+        self._logger.info("Applying MinMaxScaler() to training data")
+        data.scaled_train_data = self._scaler.fit_transform(data.train_dataframe[features])
+    
+    def _apply_test_data_scaling(self, data=None, features=None):
+        self._logger.info("Applying scaling to test data")
+        data.scaled_test_target = self._scaler_target.fit_transform(data.test_dataframe.Open.values.reshape(-1,1))
+        self._logger.info("Applying MinMaxScaler() to test data")
+        data.scaled_test_data = self._scaler.transform(data.test_dataframe[features])
+        
+    def _prepare_train_dataset(self, data=None, time_steps=None):
+        x_train = []
+        y_train = []
+        for t in range(time_steps, len(data.scaled_train_data)):
+            x_train.append(data.scaled_train_data[t-time_steps:t])
+            y_train.append(data.scaled_train_target[t])
+        x_train, y_train = np.array(x_train), np.array(y_train)
+        data.x_train = x_train
+        data.y_train = y_train
+        #prepare test set here
+        data.previous_timestep_data = data.train_dataframe.tail(time_steps)
+        #we now append this previous data onto the test set
+        data.test_dataframe = data.previous_timestep_data.append(data.test_dataframe, ignore_index=True)
+
+    def _prepare_test_dataset(self, data=None, time_steps=None):
+        x_test = []
+        y_test = []
+        for t in range(time_steps, len(data.scaled_test_data)):
+            x_test.append(data.scaled_test_data[t-time_steps:t])
+            y_test.append(data.scaled_test_target[t])
+        x_test, y_test = np.array(x_test), np.array(y_test)
+        data.x_test = x_test
+        data.y_test = y_test
+        
+        self._logger.info("x train data shape: {}".format(data.x_train.shape))
+        self._logger.info("y train data shape: {}".format(data.y_train.shape))
+        self._logger.info("x test data shape: {}".format(data.x_test.shape))
+        
+    
+    def fit_model(self):
+        pass
+    
+    def _init_LSTM(self, data=None):
+        self._logger.info("Adding LSTM to regressor")
+        self._regressor.add(LSTM(units=60, activation='relu', return_sequences=True, input_shape=(data.x_train.shape[1], data.x_train.shape[2])))
+        self._regressor.add(Dropout(0.2))
+        self._regressor.add(LSTM(units=60, activation='relu', return_sequences=True))
+        self._regressor.add(Dropout(0.3))
+        self._regressor.add(LSTM(units=80, activation='relu', return_sequences=True))
+        self._regressor.add(Dropout(0.4))
+        self._regressor.add(LSTM(units=120, activation='relu'))
+        self._regressor.add(Dropout(0.5))
+        #this is the output layer
+        self._regressor.add(Dense(units=1, activation="sigmoid"))
+        
+        self._logger.info("TensorFlow Summary\n {}".format(self._regressor.summary()))
+        #run regressor
+        self._regressor.compile(optimizer='adam', loss="binary_crossentropy") #mae loss
+        self._regressor.fit(data.x_train, data.y_train, epochs=1, batch_size=32) #binary_crossentropy
+        
+        data.y_pred_scaled = self._regressor.predict(data.x_test)
+        #inverse transform
+        data.y_pred = self._scaler_target.inverse_transform(data.y_pred_scaled)
+        data.y_test = self._scaler_target.inverse_transform(data.y_test)
+#         scores = self._regressor.evaluate(data.x_test, data.y_test, verbose=0)
+#         self._logger.info("Accuracy score : {}".format(scores * 100))
+        self._logger.info("Finished running LSTM regressor")
+        #begin plotting here
+        import matplotlib.pyplot as plt
+
+        plt.plot(data.y_test, color = 'red', label = 'Real DAX Stock Price')
+        plt.plot(data.y_pred, color = 'blue', label = 'Predicted DAX Stock Price')
+        plt.title('DAX Stock Price Prediction')
+        plt.xlabel('Time')
+        plt.ylabel('DAX Stock Price')
+        plt.legend()
+        plt.show()
         
     def run_prediction(self):
         pass
