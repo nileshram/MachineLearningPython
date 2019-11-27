@@ -357,7 +357,7 @@ class MLP(Classification):
     
     def _init_scaler_pipeline(self):
         self._steps = [('scaler', StandardScaler()), ('MLP', MLPClassifier(solver='adam', activation="relu", 
-                                      alpha=1e-05, hidden_layer_sizes=(15,), random_state=1))]
+                                      alpha=1e-05, hidden_layer_sizes=(50, 50, 50, 50, 50, 50), random_state=1))]
 
     def fit_model(self, x_param, y_param, classifier):
         classifier.fit(x_param, y_param)
