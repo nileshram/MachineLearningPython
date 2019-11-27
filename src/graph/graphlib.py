@@ -301,4 +301,39 @@ class GraphLib:
         #display plots
         plt.show()
         
+    def plot_multimodel_rnn_prediction(self, data_1, data_2):
+        #define gridspec here
+        grid = plt.GridSpec(1, 2, wspace=0.4, hspace=0.3)
+        #Add graphs to gridspec dynamically
+        plt.subplot(grid[0,0])
+        #Duplicate axes here
+        ax1 = plt.gca()
+        ax1.plot(data_1.test_dataframe.Date.iloc[data_1.x_train.shape[1]:], data_1.y_test, label="Actual DAX Settle", color="red")
+        ax1.plot(data_1.test_dataframe.Date.iloc[data_1.x_train.shape[1]:], data_1.y_pred, label="Predicted DAX Settle", color="blue")
+        
+        plt.title("DAX Futures Settle Price Prediction")
+        plt.xlabel("Date")
+        plt.ylabel("Futures Price")
+        #chart rendering
+        plt.minorticks_on()
+        ax1.set_facecolor(color='whitesmoke')
+        plt.grid(b=True, which='minor', color='#999999', linestyle='-', alpha=0.2)
+        plt.legend()
+
+
+        plt.subplot(grid[0,1])
+        ax2 = plt.gca()
+        ax2.plot(data_2.test_dataframe.Date.iloc[data_2.x_train.shape[1]:], data_2.y_test, label="Actual ESTOXX Settle", color="red")
+        ax2.plot(data_2.test_dataframe.Date.iloc[data_2.x_train.shape[1]:], data_2.y_pred, label="Predicted ESTOXX Settle", color="blue")
+        
+        plt.title("ESTOXX Futures Settle Price Prediction")
+        plt.xlabel("Date")
+        plt.ylabel("Futures Price")
+        #chart rendering
+        plt.minorticks_on()
+        ax2.set_facecolor(color='whitesmoke')
+        plt.grid(b=True, which='minor', color='#999999', linestyle='-', alpha=0.2)
+        plt.legend()
+        #display plots
+        plt.show()
     
