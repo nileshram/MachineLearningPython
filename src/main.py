@@ -15,7 +15,7 @@ from backtesting.pl_backtest import PLBacktestingEngine
 #import datamodel
 from model.datamodel import DataModel
 #import ml-classifiers
-from ml.classifiers import LogisticalRegression, SupportVectorMachine, ANN
+from ml.classifiers import LogisticalRegression, SupportVectorMachine, ANN, MLP
 
 class ConfigurationFactory:
     
@@ -55,8 +55,13 @@ if __name__ == "__main__":
 #         dax_svm = SupportVectorMachine()
 #         estoxx_svm = SupportVectorMachine()
         #Create RNN Classifier here
-        ann = ANN()
-        ann.run_classifier(dax_data)
+#         ann = ANN()
+#         ann.run_classifier(dax_data)
+        dax_mlp = MLP()
+        estoxx_mlp = MLP()
+        dax_mlp.run_classifier(dax_data)
+        estoxx_mlp.run_classifier(estoxx_data)
+        
         
         #Run classifier
 #         dax_svm.run_classifier(dax_data)

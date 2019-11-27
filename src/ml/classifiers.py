@@ -11,6 +11,7 @@ from sklearn.grid_search import GridSearchCV
 from tensorflow.keras import Sequential
 from tensorflow.keras.layers import Dense, LSTM, Dropout
 from sklearn.pipeline import Pipeline
+from sklearn.neural_network import MLPClassifier
 import logging
 import numpy as np
 import pandas as pd
@@ -306,12 +307,17 @@ class ANN(Classification):
         x_test, y_test = np.array(x_test), np.array(y_test)
         data.x_test = x_test
         data.y_test = y_test
+        
+        self._logger.info("x train data shape: {}".format(data.x_train.shape))
+        self._logger.info("y train data shape: {}".format(data.y_train.shape))
+        self._logger.info("x test data shape: {}".format(data.x_test.shape))
+        
     
     def fit_model(self):
         pass
     
     def _init_LSTM(self, data=None):
-        self._logger.info("Adding LTSM to regressor")
+        self._logger.info("Adding LSTM to regressor")
         self._regressor.add(LSTM(units=60, activation='relu', return_sequences=True, input_shape=(data.x_train.shape[1], data.x_train.shape[2])))
         self._regressor.add(Dropout(0.2))
         self._regressor.add(LSTM(units=60, activation='relu', return_sequences=True))
@@ -326,7 +332,7 @@ class ANN(Classification):
         self._logger.info("TensorFlow Summary\n {}".format(self._regressor.summary()))
         #run regressor
         self._regressor.compile(optimizer='adam', loss="binary_crossentropy", metrics=['accuracy']) #mae loss
-        self._regressor.fit(data.x_train, data.y_train, epochs=10, batch_size=32)
+        self._regressor.fit(data.x_train, data.y_train, epochs=1, batch_size=32) #binary_crossentropy
         
         data.y_pred_scaled = self._regressor.predict(data.x_test)
         data.y_pred = self._scaler_target.inverse_transform(data.y_pred_scaled)
@@ -337,5 +343,56 @@ class ANN(Classification):
     def run_prediction(self):
         pass
         
-
+class MLP(Classification):
     
+    def __init__(self):
+        super(MLP, self).__init__()
+        self._init_scaler_pipeline()
+        self._init_classifier()
+
+    def _init_classifier(self):
+        self.mlp_main = Pipeline(self._steps)
+        self.mlp_test = Pipeline(self._steps)
+        self._logger.info("Usable params in pipeline {}".format(self.mlp_main.get_params().keys()))
+    
+    def _init_scaler_pipeline(self):
+        self._steps = [('scaler', StandardScaler()), ('MLP', MLPClassifier(solver='adam', activation="relu", 
+                                      alpha=1e-05, hidden_layer_sizes=(15,), random_state=1))]
+
+    def fit_model(self, x_param, y_param, classifier):
+        classifier.fit(x_param, y_param)
+        
+    def run_prediction(self, data, x_features, classifier):
+        self._logger.info("Running MLP Prediction")
+        data.model["mlp_pred"] = classifier.predict(data.model[x_features])
+        self._logger.info("Actual Return Summary: {}".format(data.model.log_return_sign.value_counts()))
+        self._logger.info("MLP Prediction Summary: {}".format(data.model.mlp_pred.value_counts()))
+    
+    def run_classifier(self, data):
+        self._logger.info("Running MLP Classifier for {}".format(data.filename))
+        #Separate Data Parameters of x_features and y_response
+        returns_sign = data.model.log_return_sign
+        #"moving_average", "momentum", "sample_sigma"
+        x_features = ["sample_sigma_10d", "moving_average_20d", "momentum_5d", "RSI_14d", "stoch_k", "macd"]
+        #Run main classifier
+        self._run_main_classifier(data=data, x_features=x_features, 
+                                  y_result=returns_sign, classifier=self.mlp_main)
+        #Apply train test split on classifier
+        self._run_test_fit_classifier(data=data, x_features=x_features, 
+                                      y_result=returns_sign, classifier=self.mlp_test, size=0.25)
+        #Perform optimal gridsearch for parameters here
+#         self.apply_gridsearch(data=data, classifier=self.svm_test)
+        self._logger.info("Finished running through classifier")
+        
+    def compute_confusion_matrix_main(self, data):
+        self._logger.info("Computing Confusion matrix for main data as follows:")
+        data.c_matrix_main = confusion_matrix(data.model.log_return_sign, data.model.mlp_pred)
+        self._logger.info(data.c_matrix_main)
+        #pretty print confusion matrix with data labels
+        c_matrix = self._pretty_print_confusion_matrix(data.model.log_return_sign, data.model.mlp_pred)
+        return c_matrix
+
+    def compute_population_data_roc_metrics(self, data):
+        data.fpr_main, data.tpr_main, data.thresholds_main = roc_curve(data.model.log_return_sign, data.model.mlp_pred)
+        data.roc_auc_score_main = roc_auc_score(data.model.log_return_sign, data.model.mlp_pred)
+        self._logger.info("ROC AUC Main Data Score: {}".format(data.roc_auc_score_main))
