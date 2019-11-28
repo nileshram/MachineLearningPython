@@ -121,7 +121,7 @@ class GraphLib:
         plt.subplot(grid[0,0])
         #Duplicate axes here
         ax1 = plt.gca()
-        ax1.plot(data_1.fpr_test, data_1.tpr_test, label="Test Data (AUC: {})".format(format(round(data_1.roc_auc_score_test, 4))), color="lime")
+#         ax1.plot(data_1.fpr_test, data_1.tpr_test, label="Test Data (AUC: {})".format(format(round(data_1.roc_auc_score_test, 4))), color="lime")
         ax1.plot(data_1.fpr_main, data_1.tpr_main, label="Population Data (AUC: {})".format(round(data_1.roc_auc_score_main, 4)), color="blue")
         ax1.plot([0,1],[0,1],'r--',label='Random Classifier')
         plt.xlim([0.0, 1.0])
@@ -139,7 +139,7 @@ class GraphLib:
 
         plt.subplot(grid[0,1])
         ax2 = plt.gca()
-        ax2.plot(data_2.fpr_test, data_2.tpr_test, label="Test Data (AUC: {})".format(round(data_2.roc_auc_score_test, 4)), color="lime")
+#         ax2.plot(data_2.fpr_test, data_2.tpr_test, label="Test Data (AUC: {})".format(round(data_2.roc_auc_score_test, 4)), color="lime")
         ax2.plot(data_2.fpr_main, data_2.tpr_main, label="Population Data (AUC: {})".format(round(data_2.roc_auc_score_main, 4)), color="blue")
         ax2.plot([0,1],[0,1],'r--',label='Random Classifier')
         plt.xlim([0.0, 1.0])
@@ -334,6 +334,51 @@ class GraphLib:
         ax2.set_facecolor(color='whitesmoke')
         plt.grid(b=True, which='minor', color='#999999', linestyle='-', alpha=0.2)
         plt.legend()
+        #display plots
+        plt.show()
+
+    def plot_multimodel_epoch_loss(self, data_1, data_2):
+        #define gridspec here
+        grid = plt.GridSpec(1, 2, wspace=0.4, hspace=0.3)
+        #Add graphs to gridspec dynamically
+        plt.subplot(grid[0,0])
+        #Duplicate axes here
+        ax1 = plt.gca()
+        ax2 = ax1.twinx()
+        ax1.plot(data_1.history.history['loss'], label="Model loss", color="red")
+        ax2.plot(data_1.history.history['val_loss'], label="Value loss", color="blue")
+        
+        plt.title("DAX Epoch Model Loss ({}D)".format(data_1.time_steps))
+        ax1.set_xlabel("Epoch")
+        ax1.set_ylabel("Model Loss")
+        ax2.set_ylabel("Value Loss")
+        #chart rendering
+        plt.minorticks_on()
+        ax1.set_facecolor(color='whitesmoke')
+        plt.grid(b=True, which='minor', color='#999999', linestyle='-', alpha=0.2)
+        # ask matplotlib for the plotted objects and their labels
+        lines, labels = ax1.get_legend_handles_labels()
+        lines2, labels2 = ax2.get_legend_handles_labels()
+        ax2.legend(lines + lines2, labels + labels2, loc=0)
+
+        plt.subplot(grid[0,1])
+        ax3 = plt.gca()
+        ax4 = ax3.twinx()
+        ax3.plot(data_2.history.history['loss'], label="Model loss", color="red")
+        ax4.plot(data_2.history.history['val_loss'], label="Value loss", color="blue")
+        
+        plt.title("ESTOXX Epoch Model Loss ({}D)".format(data_2.time_steps))
+        ax3.set_xlabel("Epoch")
+        ax3.set_ylabel("Model Loss")
+        ax4.set_ylabel("Value Loss")
+        #chart rendering
+        plt.minorticks_on()
+        ax3.set_facecolor(color='whitesmoke')
+        plt.grid(b=True, which='minor', color='#999999', linestyle='-', alpha=0.2)
+        # ask matplotlib for the plotted objects and their labels
+        lines3, labels3 = ax3.get_legend_handles_labels()
+        lines4, labels4 = ax4.get_legend_handles_labels()
+        ax4.legend(lines3 + lines4, labels3 + labels4, loc=0)
         #display plots
         plt.show()
     

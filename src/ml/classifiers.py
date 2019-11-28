@@ -334,16 +334,17 @@ class ANN(Classification):
         self._logger.info("TensorFlow Summary\n {}".format(self._regressor.summary()))
         #run regressor
         self._regressor.compile(optimizer='adam', loss="binary_crossentropy") 
-        self._regressor.fit(data.x_train, data.y_train, epochs=1, batch_size=32) 
+        self._regressor.fit(data.x_train, data.y_train, epochs=1, batch_size=32)
+        
+        #get epoch loss here
+        data.history = self._regressor.fit(data.x_train, data.y_train, validation_split = 0.01, epochs=50, batch_size=100)
         
         data.y_pred_scaled = self._regressor.predict(data.x_test)
         #inverse transform
         data.y_pred = self._scaler_target.inverse_transform(data.y_pred_scaled)
         data.y_test = self._scaler_target.inverse_transform(data.y_test)
-        
+         
         self._compute_return_metrics(data=data, period=1)
-        self.compute_confusion_matrix_main(data)
-        self.compute_population_data_roc_metrics(data)
         self._logger.info("Finished running LSTM regressor")
         
     def run_prediction(self):
@@ -362,69 +363,4 @@ class ANN(Classification):
         #drop all unused values
         data.lstm_model.dropna(inplace=True)
         
-    def compute_confusion_matrix_main(self, data):
-        self._logger.info("Computing Confusion matrix for main data as follows:")
-        data.c_matrix_main = confusion_matrix(data.lstm_model.actual_log_return_sign, data.lstm_model.pred_log_return_sign)
-        self._logger.info(data.c_matrix_main)
-        #pretty print confusion matrix with data labels
-        c_matrix = self._pretty_print_confusion_matrix(data.lstm_model.actual_log_return_sign, data.lstm_model.pred_log_return_sign)
-        return c_matrix
-
-    def compute_population_data_roc_metrics(self, data):
-        data.fpr_main, data.tpr_main, data.thresholds_main = roc_curve(data.lstm_model.actual_log_return_sign, data.lstm_model.pred_log_return_sign)
-        data.roc_auc_score_main = roc_auc_score(data.lstm_model.actual_log_return_sign, data.lstm_model.pred_log_return_sign)
-        self._logger.info("ROC AUC Main Data Score: {}".format(data.roc_auc_score_main))
         
-# class MLP(Classification):
-#     
-#     def __init__(self):
-#         super(MLP, self).__init__()
-#         self._init_scaler_pipeline()
-#         self._init_classifier()
-# 
-#     def _init_classifier(self):
-#         self.mlp_main = Pipeline(self._steps)
-#         self.mlp_test = Pipeline(self._steps)
-#         self._logger.info("Usable params in pipeline {}".format(self.mlp_main.get_params().keys()))
-#     
-#     def _init_scaler_pipeline(self):
-#         self._steps = [('scaler', StandardScaler()), ('MLP', MLPClassifier(solver='adam', activation="relu", 
-#                                       alpha=1e-05, hidden_layer_sizes=(50, 50, 50, 50, 50, 50), random_state=1))]
-# 
-#     def fit_model(self, x_param, y_param, classifier):
-#         classifier.fit(x_param, y_param)
-#         
-#     def run_prediction(self, data, x_features, classifier):
-#         self._logger.info("Running MLP Prediction")
-#         data.model["mlp_pred"] = classifier.predict(data.model[x_features])
-#         self._logger.info("Actual Return Summary: {}".format(data.model.log_return_sign.value_counts()))
-#         self._logger.info("MLP Prediction Summary: {}".format(data.model.mlp_pred.value_counts()))
-#     
-#     def run_classifier(self, data):
-#         self._logger.info("Running MLP Classifier for {}".format(data.filename))
-#         #Separate Data Parameters of x_features and y_response
-#         returns_sign = data.model.log_return_sign
-#         #"moving_average", "momentum", "sample_sigma"
-#         x_features = ["sample_sigma_10d", "moving_average_20d", "momentum_5d", "RSI_14d", "stoch_k", "macd"]
-#         #Run main classifier
-#         self._run_main_classifier(data=data, x_features=x_features, 
-#                                   y_result=returns_sign, classifier=self.mlp_main)
-#         #Apply train test split on classifier
-#         self._run_test_fit_classifier(data=data, x_features=x_features, 
-#                                       y_result=returns_sign, classifier=self.mlp_test, size=0.25)
-#         #Perform optimal gridsearch for parameters here
-# #         self.apply_gridsearch(data=data, classifier=self.svm_test)
-#         self._logger.info("Finished running through classifier")
-#         
-#     def compute_confusion_matrix_main(self, data):
-#         self._logger.info("Computing Confusion matrix for main data as follows:")
-#         data.c_matrix_main = confusion_matrix(data.model.log_return_sign, data.model.mlp_pred)
-#         self._logger.info(data.c_matrix_main)
-#         #pretty print confusion matrix with data labels
-#         c_matrix = self._pretty_print_confusion_matrix(data.model.log_return_sign, data.model.mlp_pred)
-#         return c_matrix
-# 
-#     def compute_population_data_roc_metrics(self, data):
-#         data.fpr_main, data.tpr_main, data.thresholds_main = roc_curve(data.model.log_return_sign, data.model.mlp_pred)
-#         data.roc_auc_score_main = roc_auc_score(data.model.log_return_sign, data.model.mlp_pred)
-#         self._logger.info("ROC AUC Main Data Score: {}".format(data.roc_auc_score_main))
