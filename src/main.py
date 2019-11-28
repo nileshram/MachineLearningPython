@@ -15,7 +15,7 @@ from backtesting.pl_backtest import PLBacktestingEngine
 #import datamodel
 from model.datamodel import DataModel
 #import ml-classifiers
-from ml.classifiers import LogisticalRegression, SupportVectorMachine, ANN, MLP
+from ml.classifiers import LogisticalRegression, SupportVectorMachine, ANN
 
 class ConfigurationFactory:
     
@@ -52,13 +52,13 @@ if __name__ == "__main__":
 #         dax_logit = LogisticalRegression()
 #         estoxx_logit = LogisticalRegression()
         #Create SVM Classifier Here
-#         dax_svm = SupportVectorMachine()
-#         estoxx_svm = SupportVectorMachine()
+        dax_svm = SupportVectorMachine()
+        estoxx_svm = SupportVectorMachine()
         #Create RNN Classifier here
-        dax_ann = ANN()
-        estoxx_ann = ANN()
-        dax_ann.run_classifier(dax_data)
-        estoxx_ann.run_classifier(estoxx_data)
+#         dax_ann = ANN()
+#         estoxx_ann = ANN()
+#         dax_ann.run_classifier(dax_data)
+#         estoxx_ann.run_classifier(estoxx_data)
         
 #         dax_mlp = MLP()
 #         estoxx_mlp = MLP()
@@ -67,8 +67,8 @@ if __name__ == "__main__":
         
         
         #Run classifier
-#         dax_svm.run_classifier(dax_data)
-#         estoxx_svm.run_classifier(estoxx_data)
+        dax_svm.run_classifier(dax_data)
+        estoxx_svm.run_classifier(estoxx_data)
 #         dax_logit.run_classifier(dax_data)
 #         estoxx_logit.run_classifier(estoxx_data)
 #         pl = PLBacktestingEngine()
@@ -80,13 +80,13 @@ if __name__ == "__main__":
 #         pl.compute_transitional_probabilities(estoxx_data)
 #   
         g = GraphLib()
-        g.plot_multimodel_rnn_prediction(dax_data, estoxx_data)
+#         g.plot_multimodel_rnn_prediction(dax_data, estoxx_data)
 #         g.plot_svm_2d_multimodel(dax_data, estoxx_data)
 #         g.plot_multimodel_pl_backtest(dax_data, estoxx_data)
 #         g.plot_transition_probabilities_multi_model(dax_data, estoxx_data)
 #         g.plot_multimodel_roc_curve(dax_data, estoxx_data)
-#         g.plot_multimodel_confusion_matrix(dax_data, estoxx_data, ["Positive Returns", "Negative Returns"], 
-#                                            "Confusion Matrix - Logistic Regression")
+        g.plot_multimodel_confusion_matrix(dax_data, estoxx_data, ["Positive Returns", "Negative Returns"], 
+                                           "Confusion Matrix - SVM")
     except Exception as e:
         print(e)
 

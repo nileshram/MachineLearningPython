@@ -181,7 +181,7 @@ class SupportVectorMachine(Classification):
         self._logger.info("Usable params in pipeline {}".format(self.svm_main.get_params().keys()))
     
     def _init_scaler_pipeline(self):
-        self._steps = [('scaler', StandardScaler()), ('SVC', svm.SVC(C=10, probability=True))]
+        self._steps = [('scaler', StandardScaler()), ('SVC', svm.SVC(C=1, probability=True))]
 
     def _init_grid_search_params(self):
         self._params = {"SVC__C" : [1000, 100, 10, 1, .1, .001]}
@@ -210,7 +210,7 @@ class SupportVectorMachine(Classification):
         #Perform optimal gridsearch for parameters here
 #         self.apply_gridsearch(data=data, classifier=self.svm_test)
         #2D relationship model
-        self._run_2D_visualisation(data=data, y_target=returns_sign, data_filter=["momentum_5d", "lagged_return_1"])
+#         self._run_2D_visualisation(data=data, y_target=returns_sign, data_filter=["momentum_5d", "lagged_return_1"])
         self._logger.info("Finished running through classifier")
         
     def compute_confusion_matrix_main(self, data):
@@ -270,7 +270,7 @@ class ANN(Classification):
         self._logger.info("Applying date filter range to datamodel for test train split")
         data.train_dataframe = data.model[data.model.Date < date_filter]
         data.test_dataframe = data.model[data.model.Date >= date_filter]
-        data.train_target = data.train_dataframe.Open
+        data.train_target = data.train_dataframe.Settle
         
     def _apply_train_data_scaling(self, data=None, features=None):
         self._logger.info("Applying scaling to train data")
@@ -281,11 +281,12 @@ class ANN(Classification):
     
     def _apply_test_data_scaling(self, data=None, features=None):
         self._logger.info("Applying scaling to test data")
-        data.scaled_test_target = self._scaler_target.fit_transform(data.test_dataframe.Open.values.reshape(-1,1))
+        data.scaled_test_target = self._scaler_target.fit_transform(data.test_dataframe.Settle.values.reshape(-1,1))
         self._logger.info("Applying MinMaxScaler() to test data")
         data.scaled_test_data = self._scaler.transform(data.test_dataframe[features])
         
     def _prepare_train_dataset(self, data=None, time_steps=None):
+        data.time_steps = time_steps
         x_train = []
         y_train = []
         for t in range(time_steps, len(data.scaled_train_data)):
@@ -333,79 +334,97 @@ class ANN(Classification):
         self._logger.info("TensorFlow Summary\n {}".format(self._regressor.summary()))
         #run regressor
         self._regressor.compile(optimizer='adam', loss="binary_crossentropy") 
-        self._regressor.fit(data.x_train, data.y_train, epochs=10, batch_size=32) 
+        self._regressor.fit(data.x_train, data.y_train, epochs=1, batch_size=32) 
         
         data.y_pred_scaled = self._regressor.predict(data.x_test)
         #inverse transform
         data.y_pred = self._scaler_target.inverse_transform(data.y_pred_scaled)
         data.y_test = self._scaler_target.inverse_transform(data.y_test)
-#         scores = self._regressor.evaluate(data.x_test, data.y_test, verbose=0)
-#         self._logger.info("Accuracy score : {}".format(scores * 100))
+        
+        self._compute_return_metrics(data=data, period=1)
+        self.compute_confusion_matrix_main(data)
+        self.compute_population_data_roc_metrics(data)
         self._logger.info("Finished running LSTM regressor")
-        #begin plotting here
-#         import matplotlib.pyplot as plt
-# 
-#         plt.plot(data.test_dataframe.Date.iloc[data.x_train.shape[1]:], data.y_test, color = 'red', label = 'Actual DAX Futures Settle Price')
-#         plt.plot(data.test_dataframe.Date.iloc[data.x_train.shape[1]:], data.y_pred, color = 'blue', label = 'Predicted DAX Futures Settle Price')
-#         plt.title('DAX Futures Price Prediction')
-#         plt.xlabel('Date')
-#         plt.ylabel('DAX Futures Price')
-#         plt.legend()
-#         plt.show()
         
     def run_prediction(self):
         pass
-        
-class MLP(Classification):
     
-    def __init__(self):
-        super(MLP, self).__init__()
-        self._init_scaler_pipeline()
-        self._init_classifier()
-
-    def _init_classifier(self):
-        self.mlp_main = Pipeline(self._steps)
-        self.mlp_test = Pipeline(self._steps)
-        self._logger.info("Usable params in pipeline {}".format(self.mlp_main.get_params().keys()))
-    
-    def _init_scaler_pipeline(self):
-        self._steps = [('scaler', StandardScaler()), ('MLP', MLPClassifier(solver='adam', activation="relu", 
-                                      alpha=1e-05, hidden_layer_sizes=(50, 50, 50, 50, 50, 50), random_state=1))]
-
-    def fit_model(self, x_param, y_param, classifier):
-        classifier.fit(x_param, y_param)
-        
-    def run_prediction(self, data, x_features, classifier):
-        self._logger.info("Running MLP Prediction")
-        data.model["mlp_pred"] = classifier.predict(data.model[x_features])
-        self._logger.info("Actual Return Summary: {}".format(data.model.log_return_sign.value_counts()))
-        self._logger.info("MLP Prediction Summary: {}".format(data.model.mlp_pred.value_counts()))
-    
-    def run_classifier(self, data):
-        self._logger.info("Running MLP Classifier for {}".format(data.filename))
-        #Separate Data Parameters of x_features and y_response
-        returns_sign = data.model.log_return_sign
-        #"moving_average", "momentum", "sample_sigma"
-        x_features = ["sample_sigma_10d", "moving_average_20d", "momentum_5d", "RSI_14d", "stoch_k", "macd"]
-        #Run main classifier
-        self._run_main_classifier(data=data, x_features=x_features, 
-                                  y_result=returns_sign, classifier=self.mlp_main)
-        #Apply train test split on classifier
-        self._run_test_fit_classifier(data=data, x_features=x_features, 
-                                      y_result=returns_sign, classifier=self.mlp_test, size=0.25)
-        #Perform optimal gridsearch for parameters here
-#         self.apply_gridsearch(data=data, classifier=self.svm_test)
-        self._logger.info("Finished running through classifier")
+    def _compute_return_metrics(self, data=None, period=None):
+        data.lstm_model = pd.DataFrame({"lstm_pred_settle" : data.y_pred.flatten(),
+                                        "actual_settle" : data.y_test.flatten()})
+        data.lstm_model["actual_log_return"] = np.log(data.lstm_model.actual_settle) - np.log(data.lstm_model.actual_settle.shift(period))
+        data.lstm_model["actual_log_return_sign"] = np.sign(data.lstm_model.actual_log_return)
+        data.lstm_model["actual_log_return_sign"].replace(0, -1, inplace=True)
+        #compute predicted log return sign
+        data.lstm_model["pred_log_return"] = np.log(data.lstm_model.lstm_pred_settle) - np.log(data.lstm_model.lstm_pred_settle.shift(period))
+        data.lstm_model["pred_log_return_sign"] = np.sign(data.lstm_model.pred_log_return)
+        data.lstm_model["pred_log_return_sign"].replace(0, -1, inplace=True)
+        #drop all unused values
+        data.lstm_model.dropna(inplace=True)
         
     def compute_confusion_matrix_main(self, data):
         self._logger.info("Computing Confusion matrix for main data as follows:")
-        data.c_matrix_main = confusion_matrix(data.model.log_return_sign, data.model.mlp_pred)
+        data.c_matrix_main = confusion_matrix(data.lstm_model.actual_log_return_sign, data.lstm_model.pred_log_return_sign)
         self._logger.info(data.c_matrix_main)
         #pretty print confusion matrix with data labels
-        c_matrix = self._pretty_print_confusion_matrix(data.model.log_return_sign, data.model.mlp_pred)
+        c_matrix = self._pretty_print_confusion_matrix(data.lstm_model.actual_log_return_sign, data.lstm_model.pred_log_return_sign)
         return c_matrix
 
     def compute_population_data_roc_metrics(self, data):
-        data.fpr_main, data.tpr_main, data.thresholds_main = roc_curve(data.model.log_return_sign, data.model.mlp_pred)
-        data.roc_auc_score_main = roc_auc_score(data.model.log_return_sign, data.model.mlp_pred)
+        data.fpr_main, data.tpr_main, data.thresholds_main = roc_curve(data.lstm_model.actual_log_return_sign, data.lstm_model.pred_log_return_sign)
+        data.roc_auc_score_main = roc_auc_score(data.lstm_model.actual_log_return_sign, data.lstm_model.pred_log_return_sign)
         self._logger.info("ROC AUC Main Data Score: {}".format(data.roc_auc_score_main))
+        
+# class MLP(Classification):
+#     
+#     def __init__(self):
+#         super(MLP, self).__init__()
+#         self._init_scaler_pipeline()
+#         self._init_classifier()
+# 
+#     def _init_classifier(self):
+#         self.mlp_main = Pipeline(self._steps)
+#         self.mlp_test = Pipeline(self._steps)
+#         self._logger.info("Usable params in pipeline {}".format(self.mlp_main.get_params().keys()))
+#     
+#     def _init_scaler_pipeline(self):
+#         self._steps = [('scaler', StandardScaler()), ('MLP', MLPClassifier(solver='adam', activation="relu", 
+#                                       alpha=1e-05, hidden_layer_sizes=(50, 50, 50, 50, 50, 50), random_state=1))]
+# 
+#     def fit_model(self, x_param, y_param, classifier):
+#         classifier.fit(x_param, y_param)
+#         
+#     def run_prediction(self, data, x_features, classifier):
+#         self._logger.info("Running MLP Prediction")
+#         data.model["mlp_pred"] = classifier.predict(data.model[x_features])
+#         self._logger.info("Actual Return Summary: {}".format(data.model.log_return_sign.value_counts()))
+#         self._logger.info("MLP Prediction Summary: {}".format(data.model.mlp_pred.value_counts()))
+#     
+#     def run_classifier(self, data):
+#         self._logger.info("Running MLP Classifier for {}".format(data.filename))
+#         #Separate Data Parameters of x_features and y_response
+#         returns_sign = data.model.log_return_sign
+#         #"moving_average", "momentum", "sample_sigma"
+#         x_features = ["sample_sigma_10d", "moving_average_20d", "momentum_5d", "RSI_14d", "stoch_k", "macd"]
+#         #Run main classifier
+#         self._run_main_classifier(data=data, x_features=x_features, 
+#                                   y_result=returns_sign, classifier=self.mlp_main)
+#         #Apply train test split on classifier
+#         self._run_test_fit_classifier(data=data, x_features=x_features, 
+#                                       y_result=returns_sign, classifier=self.mlp_test, size=0.25)
+#         #Perform optimal gridsearch for parameters here
+# #         self.apply_gridsearch(data=data, classifier=self.svm_test)
+#         self._logger.info("Finished running through classifier")
+#         
+#     def compute_confusion_matrix_main(self, data):
+#         self._logger.info("Computing Confusion matrix for main data as follows:")
+#         data.c_matrix_main = confusion_matrix(data.model.log_return_sign, data.model.mlp_pred)
+#         self._logger.info(data.c_matrix_main)
+#         #pretty print confusion matrix with data labels
+#         c_matrix = self._pretty_print_confusion_matrix(data.model.log_return_sign, data.model.mlp_pred)
+#         return c_matrix
+# 
+#     def compute_population_data_roc_metrics(self, data):
+#         data.fpr_main, data.tpr_main, data.thresholds_main = roc_curve(data.model.log_return_sign, data.model.mlp_pred)
+#         data.roc_auc_score_main = roc_auc_score(data.model.log_return_sign, data.model.mlp_pred)
+#         self._logger.info("ROC AUC Main Data Score: {}".format(data.roc_auc_score_main))

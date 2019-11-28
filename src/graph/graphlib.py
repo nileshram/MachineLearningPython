@@ -311,7 +311,7 @@ class GraphLib:
         ax1.plot(data_1.test_dataframe.Date.iloc[data_1.x_train.shape[1]:], data_1.y_test, label="Actual DAX Settle", color="red")
         ax1.plot(data_1.test_dataframe.Date.iloc[data_1.x_train.shape[1]:], data_1.y_pred, label="Predicted DAX Settle", color="blue")
         
-        plt.title("DAX Futures Settle Price Prediction")
+        plt.title("DAX Futures Settle Price Prediction ({}D)".format(data_1.time_steps))
         plt.xlabel("Date")
         plt.ylabel("Futures Price")
         #chart rendering
@@ -326,7 +326,7 @@ class GraphLib:
         ax2.plot(data_2.test_dataframe.Date.iloc[data_2.x_train.shape[1]:], data_2.y_test, label="Actual ESTOXX Settle", color="red")
         ax2.plot(data_2.test_dataframe.Date.iloc[data_2.x_train.shape[1]:], data_2.y_pred, label="Predicted ESTOXX Settle", color="blue")
         
-        plt.title("ESTOXX Futures Settle Price Prediction")
+        plt.title("ESTOXX Futures Settle Price Prediction ({}D)".format(data_2.time_steps))
         plt.xlabel("Date")
         plt.ylabel("Futures Price")
         #chart rendering
