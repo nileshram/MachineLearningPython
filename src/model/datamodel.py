@@ -10,6 +10,10 @@ import json
 from model.features import FeaturesEngineering
 
 class DataManager:
+    '''
+    Class Docs:
+    This is the main class which manages the main data files to be used internally within the datamodel.
+    '''
     
     @staticmethod
     def load_data(path, name):
@@ -21,6 +25,11 @@ class DataManager:
         return data
     
 class DataModel:
+    '''
+    Class Docs:
+    Here we have the main data model which is dynamically loaded from the csv. Data cleaning and initial 
+    parsing takes place here.
+    '''
     
     def __init__(self, filename=None, extended_features=None):
         if filename is None:

@@ -8,6 +8,13 @@ from math import sqrt
 from talib import RSI, MACD, STOCH
 
 class FeaturesEngineering:
+    '''
+    Class Docs:
+    This class is responsible for all of the features engineering that takes place in the project
+    The methods here are static and are generic to be applied to any pandas dataframe with the relevant
+    attributes specified by the user. The well known libray ta-lib has also been used for advanced 
+    technical indicators
+    '''
     
     @staticmethod
     def compute_log_return(df, period=None):

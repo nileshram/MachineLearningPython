@@ -7,6 +7,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 class GraphLib:
+    '''
+    Class Docs:
+    The GraphLib takes either a single datamodel object or for multiplotting it takes
+    two datamodel objects to build axes efficiently so that both figures are displayed on the same canvas.
+    '''
     
     def __init__(self):
         pass
@@ -301,19 +306,19 @@ class GraphLib:
         #display plots
         plt.show()
         
-    def plot_multimodel_rnn_prediction(self, data_1, data_2):
+    def plot_multimodel_rnn_returns(self, data_1, data_2):
         #define gridspec here
         grid = plt.GridSpec(1, 2, wspace=0.4, hspace=0.3)
         #Add graphs to gridspec dynamically
         plt.subplot(grid[0,0])
         #Duplicate axes here
         ax1 = plt.gca()
-        ax1.plot(data_1.test_dataframe.Date.iloc[data_1.x_train.shape[1]:], data_1.y_test, label="Actual DAX Settle", color="red")
-        ax1.plot(data_1.test_dataframe.Date.iloc[data_1.x_train.shape[1]:], data_1.y_pred, label="Predicted DAX Settle", color="blue")
+        ax1.plot(data_1.test_dataframe.Date.iloc[data_1.x_train.shape[1]+ data_1.lstm_period:], data_1.lstm_model.actual_log_return, label="Actual DAX Log Return", color="red")
+        ax1.plot(data_1.test_dataframe.Date.iloc[data_1.x_train.shape[1]+ data_1.lstm_period:], data_1.lstm_model.pred_log_return, label="Predicted DAX Log Return", color="blue")
         
-        plt.title("DAX Futures Settle Price Prediction ({}D)".format(data_1.time_steps))
+        plt.title("DAX Return Prediction ({}D)".format(data_1.lstm_period))
         plt.xlabel("Date")
-        plt.ylabel("Futures Price")
+        plt.ylabel("Return")
         #chart rendering
         plt.minorticks_on()
         ax1.set_facecolor(color='whitesmoke')
@@ -323,12 +328,12 @@ class GraphLib:
 
         plt.subplot(grid[0,1])
         ax2 = plt.gca()
-        ax2.plot(data_2.test_dataframe.Date.iloc[data_2.x_train.shape[1]:], data_2.y_test, label="Actual ESTOXX Settle", color="red")
-        ax2.plot(data_2.test_dataframe.Date.iloc[data_2.x_train.shape[1]:], data_2.y_pred, label="Predicted ESTOXX Settle", color="blue")
+        ax2.plot(data_2.test_dataframe.Date.iloc[data_2.x_train.shape[1]+ data_2.lstm_period:], data_2.lstm_model.actual_log_return, label="Actual ESTOXX Log Return", color="red")
+        ax2.plot(data_2.test_dataframe.Date.iloc[data_2.x_train.shape[1]+ data_2.lstm_period:], data_2.lstm_model.pred_log_return, label="Predicted ESTOXX Log Return", color="blue")
         
-        plt.title("ESTOXX Futures Settle Price Prediction ({}D)".format(data_2.time_steps))
+        plt.title("ESTOXX Return Prediction ({}D)".format(data_2.lstm_period))
         plt.xlabel("Date")
-        plt.ylabel("Futures Price")
+        plt.ylabel("Return")
         #chart rendering
         plt.minorticks_on()
         ax2.set_facecolor(color='whitesmoke')
@@ -379,6 +384,41 @@ class GraphLib:
         lines3, labels3 = ax3.get_legend_handles_labels()
         lines4, labels4 = ax4.get_legend_handles_labels()
         ax4.legend(lines3 + lines4, labels3 + labels4, loc=0)
+        #display plots
+        plt.show()
+    
+    def plot_multimodel_rnn_prediction(self, data_1=None, data_2=None):
+        #define gridspec here
+        grid = plt.GridSpec(1, 2, wspace=0.4, hspace=0.3)
+        #Add graphs to gridspec dynamically
+        plt.subplot(grid[0,0])
+        #Duplicate axes here
+        ax1 = plt.gca()
+        ax1.plot(data_1.test_dataframe.Date.iloc[data_1.x_train.shape[1]:], data_1.y_test, label="Actual DAX Settle", color="red")
+        ax1.plot(data_1.test_dataframe.Date.iloc[data_1.x_train.shape[1]:], data_1.y_pred, label="Predicted DAX Settle", color="blue")
+        
+        plt.title("DAX Futures Settle Price Prediction ({}D)".format(data_1.time_steps))
+        plt.xlabel("Date")
+        plt.ylabel("Futures Price")
+        #chart rendering
+        plt.minorticks_on()
+        ax1.set_facecolor(color='whitesmoke')
+        plt.grid(b=True, which='minor', color='#999999', linestyle='-', alpha=0.2)
+        plt.legend()
+
+        plt.subplot(grid[0,1])
+        ax2 = plt.gca()
+        ax2.plot(data_2.test_dataframe.Date.iloc[data_2.x_train.shape[1]:], data_2.y_test, label="Actual ESTOXX Settle", color="red")
+        ax2.plot(data_2.test_dataframe.Date.iloc[data_2.x_train.shape[1]:], data_2.y_pred, label="Predicted ESTOXX Settle", color="blue")
+        
+        plt.title("ESTOXX Futures Settle Price Prediction ({}D)".format(data_2.time_steps))
+        plt.xlabel("Date")
+        plt.ylabel("Futures Price")
+        #chart rendering
+        plt.minorticks_on()
+        ax2.set_facecolor(color='whitesmoke')
+        plt.grid(b=True, which='minor', color='#999999', linestyle='-', alpha=0.2)
+        plt.legend()
         #display plots
         plt.show()
     

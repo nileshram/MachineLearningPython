@@ -17,6 +17,12 @@ import numpy as np
 import pandas as pd
 
 class Classification(metaclass=ABCMeta):
+    '''
+    Class Docs:
+    This is the main class for classification that is used in scikit-learn; there are initial methods here
+    in the abstract base class for which each of the additional classifiers can inherit from for further analysis
+    which is specific to each classifier
+    '''
     
     def __init__(self):
         self._logger = logging.getLogger("cqf_logger")
@@ -235,6 +241,11 @@ class SupportVectorMachine(Classification):
         data.SVM_model_2D = svm_2d
 
 class ANN(Classification):
+    '''
+    Class Docs:
+    This is the main class for running our LSTM classifier; utilising TensorFlow 2. We have initialised 4 layers for use of analysis
+    and have adjusted the dropout amounts and activation functions accordingly. All results are appended to the data model object for further plotting
+    '''
     
     def __init__(self):
         super(ANN, self).__init__()
@@ -337,29 +348,30 @@ class ANN(Classification):
         self._regressor.fit(data.x_train, data.y_train, epochs=1, batch_size=32)
         
         #get epoch loss here
-        data.history = self._regressor.fit(data.x_train, data.y_train, validation_split = 0.01, epochs=50, batch_size=100)
+#         data.history = self._regressor.fit(data.x_train, data.y_train, validation_split = 0.01, epochs=50, batch_size=100)
         
         data.y_pred_scaled = self._regressor.predict(data.x_test)
         #inverse transform
         data.y_pred = self._scaler_target.inverse_transform(data.y_pred_scaled)
         data.y_test = self._scaler_target.inverse_transform(data.y_test)
          
-        self._compute_return_metrics(data=data, period=1)
+        self._compute_return_metrics(data=data, period=10)
         self._logger.info("Finished running LSTM regressor")
         
     def run_prediction(self):
         pass
     
     def _compute_return_metrics(self, data=None, period=None):
+        data.lstm_period = period
         data.lstm_model = pd.DataFrame({"lstm_pred_settle" : data.y_pred.flatten(),
                                         "actual_settle" : data.y_test.flatten()})
         data.lstm_model["actual_log_return"] = np.log(data.lstm_model.actual_settle) - np.log(data.lstm_model.actual_settle.shift(period))
-        data.lstm_model["actual_log_return_sign"] = np.sign(data.lstm_model.actual_log_return)
-        data.lstm_model["actual_log_return_sign"].replace(0, -1, inplace=True)
+#         data.lstm_model["actual_log_return_sign"] = np.sign(data.lstm_model.actual_log_return)
+#         data.lstm_model["actual_log_return_sign"].replace(0, -1, inplace=True)
         #compute predicted log return sign
         data.lstm_model["pred_log_return"] = np.log(data.lstm_model.lstm_pred_settle) - np.log(data.lstm_model.lstm_pred_settle.shift(period))
-        data.lstm_model["pred_log_return_sign"] = np.sign(data.lstm_model.pred_log_return)
-        data.lstm_model["pred_log_return_sign"].replace(0, -1, inplace=True)
+#         data.lstm_model["pred_log_return_sign"] = np.sign(data.lstm_model.pred_log_return)
+#         data.lstm_model["pred_log_return_sign"].replace(0, -1, inplace=True)
         #drop all unused values
         data.lstm_model.dropna(inplace=True)
         

@@ -7,6 +7,11 @@ import numpy as np
 import logging 
 
 class PLBacktestingEngine:
+    '''
+    Class Docs:
+    This class computes the P&L for the running trades with the predicted probability outputs
+    Here the data model is injeted as input and has the computed additional attributes for plotting
+    '''
     
     def __init__(self):
         self._logger = logging.getLogger("cqf_logger")
