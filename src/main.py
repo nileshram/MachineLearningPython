@@ -45,16 +45,16 @@ if __name__ == "__main__":
         estoxx_data = DataModel(filename="eurostoxx.csv", extended_features=True)
         
         #Create Logistic Regression Classifier Here
-        dax_logit = LogisticalRegression()
-        estoxx_logit = LogisticalRegression()
+#         dax_logit = LogisticalRegression()
+#         estoxx_logit = LogisticalRegression()
         #Create SVM Classifier Here
 #         dax_svm = SupportVectorMachine()
 #         estoxx_svm = SupportVectorMachine()
         #Create RNN Classifier here
-#         dax_ann = ANN()
-#         estoxx_ann = ANN()
-#         dax_ann.run_classifier(dax_data)
-#         estoxx_ann.run_classifier(estoxx_data)
+        dax_ann = ANN()
+        estoxx_ann = ANN()
+        dax_ann.run_classifier(dax_data)
+        estoxx_ann.run_classifier(estoxx_data)
         
         #Run classifier
 #         dax_svm.run_classifier(dax_data)
@@ -69,9 +69,9 @@ if __name__ == "__main__":
 #         pl.compute_transitional_probabilities(dax_data)
 #         pl.compute_transitional_probabilities(estoxx_data)
   
-#         g = GraphLib()
+        g = GraphLib()
 #         g.plot_multimodel_rnn_returns(dax_data, estoxx_data)
-#         g.plot_multimodel_rnn_prediction(dax_data, estoxx_data)
+        g.plot_multimodel_rnn_prediction(dax_data, estoxx_data)
 #         g.plot_svm_2d_multimodel(dax_data, estoxx_data)
 #         g.plot_multimodel_pl_backtest(dax_data, estoxx_data)
 #         g.plot_transition_probabilities_multi_model(dax_data, estoxx_data)

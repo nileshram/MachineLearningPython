@@ -355,7 +355,7 @@ class ANN(Classification):
         
         self._logger.info("TensorFlow Summary\n {}".format(self._regressor.summary()))
         #run regressor
-        self._regressor.compile(optimizer='adam', loss="binary_crossentropy") 
+        self._regressor.compile(optimizer='adam', loss="mean_squared_error") 
         self._regressor.fit(data.x_train, data.y_train, epochs=1, batch_size=32)
         
         #get epoch loss here
