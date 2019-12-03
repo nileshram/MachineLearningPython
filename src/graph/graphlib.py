@@ -421,4 +421,36 @@ class GraphLib:
         plt.legend()
         #display plots
         plt.show()
+
+    def plot_multimodel_k_fold_score(self, data_1=None, data_2=None):
+        #define gridspec here
+        grid = plt.GridSpec(1, 2, wspace=0.4, hspace=0.3)
+        #Add graphs to gridspec dynamically
+        plt.subplot(grid[0,0])
+        #Duplicate axes here
+        ax1 = plt.gca()
+        ax1.plot([i+1 for i in range(len(data_1.k_fold_score))], list(data_1.k_fold_score), label="Accuracy score", color="red")
+        
+        plt.title("DAX K-fold Accuracy Score")
+        plt.xlabel("K-fold")
+        plt.ylabel("Accuracy")
+        #chart rendering
+        plt.minorticks_on()
+        ax1.set_facecolor(color='whitesmoke')
+        plt.grid(b=True, which='minor', color='#999999', linestyle='-', alpha=0.2)
+        plt.legend()
+
+        plt.subplot(grid[0,1])
+        ax2 = plt.gca()
+        ax2.plot([i+1 for i in range(len(data_2.k_fold_score))], list(data_2.k_fold_score), label="Accuracy score", color="blue")
+        plt.title("ESTOXX K-fold Accuracy Score")
+        plt.xlabel("K-fold")
+        plt.ylabel("Accuracy")
+        #chart rendering
+        plt.minorticks_on()
+        ax1.set_facecolor(color='whitesmoke')
+        plt.grid(b=True, which='minor', color='#999999', linestyle='-', alpha=0.2)
+        plt.legend()
+        #display plots
+        plt.show()
     

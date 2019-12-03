@@ -48,36 +48,37 @@ if __name__ == "__main__":
         dax_logit = LogisticalRegression()
         estoxx_logit = LogisticalRegression()
         #Create SVM Classifier Here
-        dax_svm = SupportVectorMachine()
-        estoxx_svm = SupportVectorMachine()
+#         dax_svm = SupportVectorMachine()
+#         estoxx_svm = SupportVectorMachine()
         #Create RNN Classifier here
-        dax_ann = ANN()
-        estoxx_ann = ANN()
-        dax_ann.run_classifier(dax_data)
-        estoxx_ann.run_classifier(estoxx_data)
+#         dax_ann = ANN()
+#         estoxx_ann = ANN()
+#         dax_ann.run_classifier(dax_data)
+#         estoxx_ann.run_classifier(estoxx_data)
         
         #Run classifier
-        dax_svm.run_classifier(dax_data)
-        estoxx_svm.run_classifier(estoxx_data)
+#         dax_svm.run_classifier(dax_data)
+#         estoxx_svm.run_classifier(estoxx_data)
         dax_logit.run_classifier(dax_data)
         estoxx_logit.run_classifier(estoxx_data)
-        pl = PLBacktestingEngine()
-        pl.run_backtest(data=dax_data, initial_capital=500000, bet_size=0.10, 
-                        upper_bound=0.7, lower_bound=0.55)
-        pl.run_backtest(data=estoxx_data, initial_capital=500000, bet_size=0.10, 
-                        upper_bound=0.7, lower_bound=0.55)
-        pl.compute_transitional_probabilities(dax_data)
-        pl.compute_transitional_probabilities(estoxx_data)
+#         pl = PLBacktestingEngine()
+#         pl.run_backtest(data=dax_data, initial_capital=500000, bet_size=0.10, 
+#                         upper_bound=0.7, lower_bound=0.55)
+#         pl.run_backtest(data=estoxx_data, initial_capital=500000, bet_size=0.10, 
+#                         upper_bound=0.7, lower_bound=0.55)
+#         pl.compute_transitional_probabilities(dax_data)
+#         pl.compute_transitional_probabilities(estoxx_data)
   
         g = GraphLib()
-        g.plot_multimodel_rnn_returns(dax_data, estoxx_data)
-        g.plot_multimodel_rnn_prediction(dax_data, estoxx_data)
-        g.plot_svm_2d_multimodel(dax_data, estoxx_data)
-        g.plot_multimodel_pl_backtest(dax_data, estoxx_data)
-        g.plot_transition_probabilities_multi_model(dax_data, estoxx_data)
+#         g.plot_multimodel_rnn_returns(dax_data, estoxx_data)
+#         g.plot_multimodel_rnn_prediction(dax_data, estoxx_data)
+#         g.plot_svm_2d_multimodel(dax_data, estoxx_data)
+#         g.plot_multimodel_pl_backtest(dax_data, estoxx_data)
+#         g.plot_transition_probabilities_multi_model(dax_data, estoxx_data)
+        g.plot_multimodel_k_fold_score(data_1=dax_data, data_2=estoxx_data)
         g.plot_multimodel_roc_curve(dax_data, estoxx_data)
         g.plot_multimodel_confusion_matrix(dax_data, estoxx_data, ["Positive Returns", "Negative Returns"], 
-                                           "Confusion Matrix - LSTM")
+                                           "Confusion Matrix")
     except Exception as e:
         print(e)
 

@@ -7,7 +7,7 @@ from abc import abstractmethod, ABCMeta
 from sklearn import linear_model, svm, model_selection
 from sklearn.metrics import confusion_matrix, roc_curve, roc_auc_score, classification_report
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
-from sklearn.grid_search import GridSearchCV
+from sklearn.model_selection import KFold, GridSearchCV, cross_val_score
 from tensorflow.keras import Sequential
 from tensorflow.keras.layers import Dense, LSTM, Dropout
 from sklearn.pipeline import Pipeline
@@ -15,6 +15,7 @@ from sklearn.neural_network import MLPClassifier
 import logging
 import numpy as np
 import pandas as pd
+from statsmodels.sandbox.tools import cross_val
 
 class Classification(metaclass=ABCMeta):
     '''
@@ -139,6 +140,7 @@ class LogisticalRegression(Classification):
         #Apply train test split on classifier
         self._run_test_fit_classifier(data=data, x_features=lagged_headers, 
                                       y_result=returns_sign, classifier=self.logreg_test, size=0.25)
+        self.run_k_fold_cross_validation(data=data, x_features=lagged_headers, y_target=returns_sign, kfold=7)
         #Perform optimal gridsearch for parameters here
 #         self.apply_gridsearch(data=data, classifier=linear_model.LogisticRegression())
         self._logger.info("Finished running through classifier")
@@ -172,6 +174,15 @@ class LogisticalRegression(Classification):
             self._logger.info('Coefficient of each feature: {}'.format(clf.coef_))
             self._logger.info('Training accuracy: {}'.format(clf.score(x_train_std, y_train)))
             self._logger.info('Test accuracy: {}'.format(clf.score(x_test_std, y_test)))
+    
+    def run_k_fold_cross_validation(self, data=None, x_features=None, y_target=None, kfold=None):
+        self._logger.info("Running K Fold Cross Validation on: {} folds".format(kfold))
+        k_fold = KFold(n_splits=kfold, random_state=7, shuffle=False)
+        data.k_fold_score = cross_val_score(self.logreg_main, data.model[x_features], y_target,
+                                       cv=k_fold, scoring='accuracy')
+        cross_val_accuracy = data.k_fold_score.mean()
+        self._logger.info("Mean accuracy for k-fold: {}".format(cross_val_accuracy))
+        self._logger.info("Finished running K-fold Cross Validation")
     
 class SupportVectorMachine(Classification):
     
